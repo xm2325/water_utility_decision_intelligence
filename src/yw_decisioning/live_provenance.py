@@ -5,7 +5,7 @@ from pathlib import Path
 import hashlib
 import json
 
-LIVE_FILES = (
+DECISION_FILES = (
     "nightflow_backtest_metrics.json",
     "nightflow_promotion_decision.json",
     "nightflow_policy_capacity_summary.csv",
@@ -13,6 +13,13 @@ LIVE_FILES = (
     "nightflow_policy_dma_concentration.csv",
     "nightflow_decision_value_metrics.json",
 )
+
+CONTINUITY_FILES = (
+    "nightflow_continuity_sensitivity.csv",
+    "nightflow_continuity_metrics.json",
+)
+
+LIVE_FILES = DECISION_FILES + CONTINUITY_FILES
 
 
 def sha256_file(path: str | Path) -> str:

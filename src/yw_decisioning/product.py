@@ -21,6 +21,7 @@ RESULT_TABLES = {
     "nightflow_policy_capacity_summary.csv": "nightflow_policy_capacity_summary",
     "nightflow_policy_queue_stability.csv": "nightflow_policy_queue_stability",
     "nightflow_policy_dma_concentration.csv": "nightflow_policy_dma_concentration",
+    "nightflow_continuity_sensitivity.csv": "nightflow_continuity_sensitivity",
 }
 
 
@@ -77,6 +78,7 @@ def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dic
                 """
             )
 
+
         if "watsit_resource_watch_2026" in loaded:
             con.execute(
                 """
@@ -98,6 +100,7 @@ def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dic
                 """
             )
 
+
         if "nightflow_policy_capacity_summary" in loaded:
             con.execute(
                 """
@@ -116,6 +119,18 @@ def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dic
                 FROM nightflow_policy_capacity_summary
                 WHERE capacity = 20
                 ORDER BY signal_capture DESC, candidate_precision DESC
+                """
+            )
+
+        if "nightflow_continuity_sensitivity" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_continuity_frontier AS
+                SELECT carryover_fraction, signal_capture, signal_capture_cost_pp_vs_zero,
+                       mean_consecutive_day_jaccard, mean_previous_queue_retention,
+                       mean_continuity_selected_per_day, selection_hhi
+                FROM nightflow_continuity_sensitivity
+                ORDER BY carryover_fraction
                 """
             )
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import pandas as pd
 
-from .live_provenance import verify_live_provenance
+from .live_provenance import CONTINUITY_FILES, DECISION_FILES, verify_live_provenance
 
 
 def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
@@ -51,7 +51,7 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "prohibited_claim": "leak detection, avoided incidents, or unexecuted MAE improvement",
     })
 
-    provenance_ok, provenance_detail = verify_live_provenance(root)
+    provenance_ok, provenance_detail = verify_live_provenance(root, required=DECISION_FILES)
     decision_metrics = results / "nightflow_decision_value_metrics.json"
     has_decision = has_live and decision_metrics.exists() and provenance_ok
     rows.append({
@@ -62,6 +62,24 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "artifact": "results/nightflow_decision_value_metrics.json" if has_decision else "",
         "allowed_claim": "residual-signal capture, candidate review burden, capacity utilisation, queue stability and DMA concentration" if has_decision else "decision-policy design only",
         "prohibited_claim": "verified leak recall, recovered water, avoided incidents, ODI recovery, staffing requirement or financial return",
+    })
+
+    continuity_metrics = results / "nightflow_continuity_metrics.json"
+    continuity_required = (
+        "nightflow_backtest_metrics.json",
+        "nightflow_promotion_decision.json",
+        *CONTINUITY_FILES,
+    )
+    continuity_provenance_ok, continuity_provenance_detail = verify_live_provenance(root, required=continuity_required)
+    has_continuity = has_live and continuity_metrics.exists() and continuity_provenance_ok
+    rows.append({
+        "evidence_id": "nightflow_queue_continuity",
+        "evidence_type": "executed_real_data" if has_continuity else ("not_yet_executed" if not continuity_metrics.exists() else "unverified_live_output"),
+        "status": "available" if has_continuity else "blocked_pending_verified_live_run",
+        "source": "Held-out Yorkshire Water DMA night-flow candidates from the frozen champion",
+        "artifact": "results/nightflow_continuity_metrics.json" if has_continuity else "",
+        "allowed_claim": "candidate-only continuity sensitivity, queue Jaccard/retention and residual-signal trade-off" if has_continuity else "continuity-policy design only",
+        "prohibited_claim": "optimal continuity quota, verified leak recall, staffing savings, avoided incidents or financial return",
     })
 
     smoke = results / "dev_validation" / "nightflow_backtest_metrics.json"
@@ -80,12 +98,15 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "real_evidence_items_available": int(((register["evidence_type"] == "executed_real_data") & (register["status"] == "available")).sum()),
         "live_nightflow_claims_ready": bool(has_live),
         "decision_value_claims_ready": bool(has_decision),
+        "continuity_claims_ready": bool(has_continuity),
         "live_provenance_verified": bool(provenance_ok),
         "live_provenance_detail": provenance_detail,
+        "continuity_provenance_verified": bool(continuity_provenance_ok),
+        "continuity_provenance_detail": continuity_provenance_detail,
         "application_claim_boundary": (
             "Executed public-data claims may cover APR portfolio statistics, source reconciliation, Watsit context, "
-            "night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture and review-workload metrics. "
-            "Do not describe anomaly signals as confirmed leaks or convert them into avoided incidents, recovered water, ODI recovery or financial return."
+            "night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture, review-workload and candidate-only queue-continuity sensitivity metrics. "
+            "Do not describe anomaly signals as confirmed leaks, call a continuity quota optimal, or convert signals into avoided incidents, recovered water, ODI recovery or financial return."
         ),
     }
     return register, summary
@@ -99,8 +120,12 @@ def save_evidence_register(root: str | Path) -> dict:
     register.to_csv(out / "EVIDENCE_REGISTER.csv", index=False)
     (out / "evidence_register_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
-    status = "READY" if summary["live_nightflow_claims_ready"] and (not (out / "nightflow_decision_value_metrics.json").exists() or summary["decision_value_claims_ready"]) else "BLOCKED FOR UNVERIFIED LIVE CLAIMS"
-    report = f"""# Release readiness — v0.6
+    status = "READY" if (
+        summary["live_nightflow_claims_ready"]
+        and (not (out / "nightflow_decision_value_metrics.json").exists() or summary["decision_value_claims_ready"])
+        and (not (out / "nightflow_continuity_metrics.json").exists() or summary["continuity_claims_ready"])
+    ) else "BLOCKED FOR UNVERIFIED LIVE CLAIMS"
+    report = f"""# Release readiness — v0.7
 
 **Status: {status}**
 
@@ -109,7 +134,9 @@ This register separates executed public-data evidence from synthetic development
 - Real evidence items available: **{summary['real_evidence_items_available']}**
 - Live night-flow claims ready: **{summary['live_nightflow_claims_ready']}**
 - Decision-value claims ready: **{summary['decision_value_claims_ready']}**
+- Continuity claims ready: **{summary['continuity_claims_ready']}**
 - Live provenance verified: **{summary['live_provenance_verified']}**
+- Continuity provenance verified: **{summary['continuity_provenance_verified']}**
 
 ## Application boundary
 

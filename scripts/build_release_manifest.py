@@ -33,6 +33,7 @@ key_paths = [
     RESULTS / "EVIDENCE_REGISTER.csv",
     RESULTS / "operational_decision_product.sqlite",
     RESULTS / "nightflow_decision_value_metrics.json",
+    RESULTS / "nightflow_continuity_metrics.json",
     RESULTS / "live_validation_provenance.json",
 ]
 evidence_summary = json.loads((RESULTS / "evidence_register_summary.json").read_text())
@@ -42,7 +43,9 @@ manifest = {
     "automated_test_functions": count_tests(),
     "live_nightflow_claims_ready": evidence_summary["live_nightflow_claims_ready"],
     "decision_value_claims_ready": evidence_summary.get("decision_value_claims_ready", False),
+    "continuity_claims_ready": evidence_summary.get("continuity_claims_ready", False),
     "live_provenance_verified": evidence_summary.get("live_provenance_verified", False),
+    "continuity_provenance_verified": evidence_summary.get("continuity_provenance_verified", False),
     "artifacts": [
         {
             "path": str(p.relative_to(ROOT)),

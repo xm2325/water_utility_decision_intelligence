@@ -63,3 +63,13 @@ FROM v_nightflow_policy_capacity20;
 SELECT *
 FROM v_nightflow_capacity_tradeoff
 ORDER BY capacity, signal_capture DESC;
+
+-- v0.7: continuity/capture sensitivity among current positive candidates only.
+SELECT carryover_fraction,
+       signal_capture,
+       signal_capture_cost_pp_vs_zero,
+       mean_consecutive_day_jaccard,
+       mean_previous_queue_retention,
+       mean_continuity_selected_per_day
+FROM v_nightflow_continuity_frontier
+ORDER BY carryover_fraction;
