@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import pandas as pd
 
-from .live_provenance import CONTINUITY_FILES, DECISION_FILES, verify_live_provenance
+from .live_provenance import CAPACITY_FRONTIER_FILES, CONTINUITY_FILES, DECISION_FILES, verify_live_provenance
 
 
 def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
@@ -64,6 +64,24 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "prohibited_claim": "verified leak recall, recovered water, avoided incidents, ODI recovery, staffing requirement or financial return",
     })
 
+    frontier_metrics = results / "nightflow_capacity_frontier_metrics.json"
+    frontier_required = (
+        "nightflow_decision_value_metrics.json",
+        "nightflow_policy_capacity_summary.csv",
+        *CAPACITY_FRONTIER_FILES,
+    )
+    frontier_provenance_ok, frontier_provenance_detail = verify_live_provenance(root, required=frontier_required)
+    has_frontier = has_live and frontier_metrics.exists() and frontier_provenance_ok
+    rows.append({
+        "evidence_id": "nightflow_capacity_frontier",
+        "evidence_type": "executed_real_data" if has_frontier else ("not_yet_executed" if not frontier_metrics.exists() else "unverified_live_output"),
+        "status": "available" if has_frontier else "blocked_pending_verified_live_run",
+        "source": "Capacity-constrained policy outputs from held-out Yorkshire Water DMA night-flow predictions",
+        "artifact": "results/nightflow_capacity_frontier_metrics.json" if has_frontier else "",
+        "allowed_claim": "marginal residual-signal capture and candidate-backlog changes across stated capacity scenarios" if has_frontier else "capacity-frontier design only",
+        "prohibited_claim": "optimal staffing, staffing savings, verified leak recall, avoided leakage, ROI or financial return",
+    })
+
     continuity_metrics = results / "nightflow_continuity_metrics.json"
     continuity_required = (
         "nightflow_backtest_metrics.json",
@@ -98,15 +116,18 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "real_evidence_items_available": int(((register["evidence_type"] == "executed_real_data") & (register["status"] == "available")).sum()),
         "live_nightflow_claims_ready": bool(has_live),
         "decision_value_claims_ready": bool(has_decision),
+        "capacity_frontier_claims_ready": bool(has_frontier),
         "continuity_claims_ready": bool(has_continuity),
         "live_provenance_verified": bool(provenance_ok),
         "live_provenance_detail": provenance_detail,
+        "capacity_frontier_provenance_verified": bool(frontier_provenance_ok),
+        "capacity_frontier_provenance_detail": frontier_provenance_detail,
         "continuity_provenance_verified": bool(continuity_provenance_ok),
         "continuity_provenance_detail": continuity_provenance_detail,
         "application_claim_boundary": (
             "Executed public-data claims may cover APR portfolio statistics, source reconciliation, Watsit context, "
-            "night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture, review-workload and candidate-only queue-continuity sensitivity metrics. "
-            "Do not describe anomaly signals as confirmed leaks, call a continuity quota optimal, or convert signals into avoided incidents, recovered water, ODI recovery or financial return."
+            "night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture, review-workload, marginal capacity-frontier and candidate-only queue-continuity sensitivity metrics. "
+            "Do not describe anomaly signals as confirmed leaks, call a capacity or continuity setting optimal, or convert signals into avoided incidents, recovered water, ODI recovery or financial return."
         ),
     }
     return register, summary
@@ -123,9 +144,10 @@ def save_evidence_register(root: str | Path) -> dict:
     status = "READY" if (
         summary["live_nightflow_claims_ready"]
         and (not (out / "nightflow_decision_value_metrics.json").exists() or summary["decision_value_claims_ready"])
+        and (not (out / "nightflow_capacity_frontier_metrics.json").exists() or summary["capacity_frontier_claims_ready"])
         and (not (out / "nightflow_continuity_metrics.json").exists() or summary["continuity_claims_ready"])
     ) else "BLOCKED FOR UNVERIFIED LIVE CLAIMS"
-    report = f"""# Release readiness — v0.7
+    report = f"""# Release readiness — v0.8
 
 **Status: {status}**
 
@@ -134,8 +156,10 @@ This register separates executed public-data evidence from synthetic development
 - Real evidence items available: **{summary['real_evidence_items_available']}**
 - Live night-flow claims ready: **{summary['live_nightflow_claims_ready']}**
 - Decision-value claims ready: **{summary['decision_value_claims_ready']}**
+- Capacity-frontier claims ready: **{summary['capacity_frontier_claims_ready']}**
 - Continuity claims ready: **{summary['continuity_claims_ready']}**
 - Live provenance verified: **{summary['live_provenance_verified']}**
+- Capacity-frontier provenance verified: **{summary['capacity_frontier_provenance_verified']}**
 - Continuity provenance verified: **{summary['continuity_provenance_verified']}**
 
 ## Application boundary

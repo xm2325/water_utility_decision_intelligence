@@ -1,4 +1,4 @@
-.PHONY: bootstrap verify-sources test apr edm resource smoke live decision continuity product evidence provenance release all
+.PHONY: bootstrap verify-sources test apr edm resource smoke live decision frontier continuity product evidence provenance release all
 
 bootstrap:
 	python scripts/download_apr.py
@@ -24,6 +24,9 @@ smoke:
 decision:
 	python scripts/run_decision_value.py
 
+frontier:
+	python scripts/run_capacity_frontier.py
+
 continuity:
 	python scripts/run_continuity_sensitivity.py
 
@@ -34,6 +37,7 @@ live:
 	python scripts/download_arcgis.py night_flow_2023 night_flow_2024 night_flow_2025 night_flow_2026 reservoir_2026 dwq_2026
 	python scripts/run_nightflow_model.py --splits 4 --capacity 20
 	python scripts/run_decision_value.py
+	python scripts/run_capacity_frontier.py
 	python scripts/run_continuity_sensitivity.py
 	python scripts/build_live_provenance.py
 	python scripts/build_operational_store.py

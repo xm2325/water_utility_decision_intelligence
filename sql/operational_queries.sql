@@ -35,16 +35,6 @@ SELECT calendar_year,
        retrieved_date
 FROM v_source_reconciliation_review;
 
--- DMAs where the ML challenger materially underperforms persistence.
-SELECT DMA_ID,
-       test_rows,
-       mae_model,
-       mae_persistence,
-       relative_mae_improvement
-FROM nightflow_dma_performance
-WHERE relative_mae_improvement < 0
-ORDER BY relative_mae_improvement ASC;
-
 -- Current multi-signal resource context. These are project watch rules, not an official drought classification.
 SELECT month, year,
        rainfall_provisional_pct_lta,
@@ -73,3 +63,10 @@ SELECT carryover_fraction,
        mean_continuity_selected_per_day
 FROM v_nightflow_continuity_frontier
 ORDER BY carryover_fraction;
+
+-- v0.8: marginal residual-signal return as daily review capacity rises.
+SELECT capacity, previous_capacity, mean_selected_per_day, signal_capture,
+       mean_backlog_candidates, delta_selected_per_day, delta_signal_capture_pp,
+       marginal_capture_pp_per_extra_review, backlog_reduction_per_day
+FROM v_nightflow_capacity_marginal_value
+ORDER BY capacity;

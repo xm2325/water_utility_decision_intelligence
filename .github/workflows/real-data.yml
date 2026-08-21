@@ -54,6 +54,9 @@ jobs:
       - name: Evaluate capacity-aware review policies
         run: python scripts/run_decision_value.py --capacities 5,10,20,40 --minutes-per-review 20
 
+      - name: Build marginal capacity / residual-signal frontier
+        run: python scripts/run_capacity_frontier.py --policy capacity_constrained
+
       - name: Evaluate candidate-only queue continuity sensitivity
         run: python scripts/run_continuity_sensitivity.py --capacity 20 --fractions 0,0.10,0.25,0.50 --minutes-per-review 20
 
