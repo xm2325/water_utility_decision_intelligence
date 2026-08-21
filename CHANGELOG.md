@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.0 — 2026-08-21
+
+- Replaced the single fixed persistence comparator with a leakage-safe simple-baseline set: persistence, 7-day seasonal and trailing-28-day median.
+- Selects the baseline from the calibration block only before each held-out rolling-origin fold; the test block cannot choose its own comparator.
+- Promotion now requires ML to beat the selected simple baseline, not merely persistence.
+- Added selected-baseline uncertainty bands and champion-consistent operational routing when ML is rejected.
+- Retained persistence metrics separately for auditability and easier interpretation.
+- Added fold-level baseline-selection outputs and one additional regression test; local suite is now 21/21.
+
 ## v0.4.0 — 2026-08-21
 
 - Moved the three large APR raw CSV releases out of Git and added `make bootstrap` for official-source retrieval.

@@ -1,4 +1,4 @@
-# Model card — DMA night-flow investigation model v0.4
+# Model card — DMA night-flow investigation model v0.5
 
 ## Intended decision
 
@@ -24,24 +24,24 @@ Time windows are calendar based and closed before the target time. This prevents
 
 ## Champion and challenger
 
-**Baseline:** previous observed flow (persistence).
+**Simple baseline set:** previous observed flow (persistence), a 7-day seasonal value and a trailing-28-day median. One baseline is selected on calibration data only for each fold; held-out outcomes are not used to choose the comparator.
 
 **Challenger:** `HistGradientBoostingRegressor` with median imputation and absolute-error loss.
 
 The default production gate requires all of the following:
 
-1. at least 2% aggregate MAE improvement over persistence;
-2. no rolling fold more than 5% worse than persistence;
+1. at least 2% aggregate MAE improvement over the calibration-selected simple baseline;
+2. no rolling fold more than 5% worse than the selected baseline;
 3. ML one-sided upper-band coverage between 85% and 97%;
-4. at least half of evaluated DMAs improve against persistence;
+4. at least half of evaluated DMAs improve against the selected baseline;
 5. the 10th percentile of DMA-level relative improvement is no worse than -25%;
 6. the data contract passes.
 
-If a check fails, persistence remains champion.
+If a check fails, the calibration-selected simple baseline remains champion.
 
 ## Champion-consistent operational output
 
-Both challenger and baseline get separate empirical one-sided residual bands. After the gate is evaluated, the deployed champion selects:
+The challenger, selected simple baseline and persistence reference each get empirical one-sided residual bands. After the gate is evaluated, the deployed champion selects:
 
 - expected flow;
 - upper uncertainty band;
@@ -49,7 +49,7 @@ Both challenger and baseline get separate empirical one-sided residual bands. Af
 - excess above the band;
 - investigation score.
 
-This prevents a governance inconsistency where persistence is declared champion but an ML-derived queue is still used operationally.
+This prevents a governance inconsistency where a simple baseline is declared champion but an ML-derived queue is still used operationally.
 
 ## Validation
 

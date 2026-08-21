@@ -19,7 +19,7 @@ def latest_investigation_priorities(
 
     if capacity < 1:
         raise ValueError("capacity must be positive")
-    if champion not in {"hist_gradient_boosting", "persistence_baseline"}:
+    if champion not in {"hist_gradient_boosting", "simple_baseline", "persistence_baseline"}:
         raise ValueError(f"Unsupported champion: {champion}")
 
     d = predictions.copy()
@@ -33,6 +33,15 @@ def latest_investigation_priorities(
         s["champion_anomaly_excess"] = s["ml_anomaly_excess"]
         s["champion_investigation_score"] = s["ml_investigation_score"]
         s["champion_residual_z"] = s["residual_z"]
+        s["champion_model"] = "hist_gradient_boosting"
+    elif champion == "simple_baseline":
+        s["expected_flow"] = s["simple_baseline"]
+        s["champion_upper_band"] = s["simple_baseline_upper_band"]
+        s["champion_upper_exceedance"] = s["simple_baseline_upper_exceedance"]
+        s["champion_anomaly_excess"] = s["simple_baseline_anomaly_excess"]
+        s["champion_investigation_score"] = s["simple_baseline_investigation_score"]
+        s["champion_residual_z"] = s["simple_baseline_residual_z"]
+        s["champion_model"] = "simple_baseline:" + s["simple_baseline_name"].astype(str)
     else:
         s["expected_flow"] = s["persistence"]
         s["champion_upper_band"] = s["persistence_upper_band"]
@@ -40,9 +49,8 @@ def latest_investigation_priorities(
         s["champion_anomaly_excess"] = s["persistence_anomaly_excess"]
         s["champion_investigation_score"] = s["persistence_investigation_score"]
         s["champion_residual_z"] = s["persistence_residual_z"]
+        s["champion_model"] = "persistence_baseline"
 
-    s["champion_model"] = champion
-    # Compatibility aliases now refer to the deployed champion rather than always to ML.
     s["upper_band"] = s["champion_upper_band"]
     s["upper_exceedance"] = s["champion_upper_exceedance"]
     s["anomaly_excess"] = s["champion_anomaly_excess"]

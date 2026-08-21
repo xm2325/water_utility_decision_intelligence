@@ -12,6 +12,13 @@ from sklearn.pipeline import Pipeline
 from .nightflow_data import PromotionPolicy, feature_columns, make_features
 
 
+BASELINE_COLUMNS = {
+    "persistence": "lag1",
+    "seasonal_7d": "lag7d",
+    "rolling_28d_median": "rolling28d",
+}
+
+
 def build_model() -> Pipeline:
     return Pipeline(
         [
@@ -40,6 +47,35 @@ def _split_train_calibration(train: pd.DataFrame, fraction: float = 0.15) -> tup
     cut = min(cut, len(dates) - 1)
     cal_start = pd.Timestamp(dates[cut])
     return train[train["DATE"] < cal_start].copy(), train[train["DATE"] >= cal_start].copy()
+
+
+def _baseline_series(frame: pd.DataFrame, name: str) -> pd.Series:
+    """Return a baseline prediction with persistence as the missing-history fallback."""
+
+    if name not in BASELINE_COLUMNS:
+        raise KeyError(f"Unknown baseline {name!r}; choices: {sorted(BASELINE_COLUMNS)}")
+    if name == "persistence":
+        return frame["lag1"].astype(float)
+    return frame[BASELINE_COLUMNS[name]].astype(float).fillna(frame["lag1"].astype(float))
+
+
+def _select_simple_baseline(calibration: pd.DataFrame) -> tuple[str, dict[str, float]]:
+    """Select one simple baseline using calibration data only.
+
+    The held-out test block never participates in baseline selection. This avoids
+    choosing a comparator after observing test outcomes.
+    """
+
+    if calibration.empty:
+        return "persistence", {name: np.nan for name in BASELINE_COLUMNS}
+
+    scores: dict[str, float] = {}
+    y = calibration["target"].astype(float)
+    for name in BASELINE_COLUMNS:
+        pred = _baseline_series(calibration, name)
+        scores[name] = float(mean_absolute_error(y, pred))
+    best = min(scores, key=lambda name: (scores[name], name))
+    return best, scores
 
 
 def _drift_table(train: pd.DataFrame, test: pd.DataFrame, features: list[str]) -> pd.DataFrame:
@@ -75,17 +111,20 @@ def per_dma_performance(predictions: pd.DataFrame, min_rows: int = 10) -> pd.Dat
         if len(g) < min_rows:
             continue
         mae_model = mean_absolute_error(g["target"], g["prediction"])
-        mae_base = mean_absolute_error(g["target"], g["persistence"])
+        mae_base = mean_absolute_error(g["target"], g["simple_baseline"])
+        mae_persistence = mean_absolute_error(g["target"], g["persistence"])
         rel = (mae_base - mae_model) / mae_base if mae_base else np.nan
         rows.append(
             {
                 "DMA_ID": dma,
                 "test_rows": int(len(g)),
                 "mae_model": float(mae_model),
-                "mae_persistence": float(mae_base),
+                "mae_selected_baseline": float(mae_base),
+                "mae_persistence": float(mae_persistence),
                 "relative_mae_improvement": float(rel) if np.isfinite(rel) else np.nan,
                 "model_better": bool(np.isfinite(rel) and rel > 0),
                 "mean_model_error": float((g["target"] - g["prediction"]).mean()),
+                "mean_selected_baseline_error": float((g["target"] - g["simple_baseline"]).mean()),
                 "mean_persistence_error": float((g["target"] - g["persistence"]).mean()),
             }
         )
@@ -95,10 +134,12 @@ def per_dma_performance(predictions: pd.DataFrame, min_rows: int = 10) -> pd.Dat
                 "DMA_ID",
                 "test_rows",
                 "mae_model",
+                "mae_selected_baseline",
                 "mae_persistence",
                 "relative_mae_improvement",
                 "model_better",
                 "mean_model_error",
+                "mean_selected_baseline_error",
                 "mean_persistence_error",
             ]
         )
@@ -112,7 +153,7 @@ def rolling_origin_backtest(
     calibration_fraction: float = 0.15,
     upper_quantile: float = 0.90,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
-    """Expanding-window backtest with fair persistence and model bands."""
+    """Expanding-window backtest against a calibration-selected simple baseline."""
 
     d = make_features(df)
     dates = np.array(sorted(pd.to_datetime(d["DATE"]).unique()))
@@ -152,37 +193,54 @@ def rolling_origin_backtest(
             train_model = train_all.copy()
             calibration = train_all.iloc[0:0].copy()
 
+        selected_baseline, baseline_calibration_mae = _select_simple_baseline(calibration)
+
         model = build_model()
         model.fit(train_model[features], train_model["target"])
 
         if len(calibration):
             cal_model_pred = model.predict(calibration[features])
             cal_model_resid = calibration["target"].to_numpy() - cal_model_pred
-            cal_base_resid = calibration["target"].to_numpy() - calibration["lag1"].to_numpy()
+            cal_selected_pred = _baseline_series(calibration, selected_baseline).to_numpy()
+            cal_selected_resid = calibration["target"].to_numpy() - cal_selected_pred
+            cal_persistence_resid = calibration["target"].to_numpy() - calibration["lag1"].to_numpy()
             ml_upper_residual_q = float(np.quantile(cal_model_resid, upper_quantile, method="higher"))
-            persistence_upper_residual_q = float(np.quantile(cal_base_resid, upper_quantile, method="higher"))
+            simple_upper_residual_q = float(np.quantile(cal_selected_resid, upper_quantile, method="higher"))
+            persistence_upper_residual_q = float(np.quantile(cal_persistence_resid, upper_quantile, method="higher"))
         else:
             ml_upper_residual_q = 0.0
+            simple_upper_residual_q = 0.0
             persistence_upper_residual_q = 0.0
 
         test["prediction"] = model.predict(test[features])
         test["persistence"] = test["lag1"]
+        test["seasonal_7d_baseline"] = _baseline_series(test, "seasonal_7d")
+        test["rolling_28d_baseline"] = _baseline_series(test, "rolling_28d_median")
+        test["simple_baseline_name"] = selected_baseline
+        test["simple_baseline"] = _baseline_series(test, selected_baseline)
+
         test["residual"] = test["target"] - test["prediction"]
+        test["simple_baseline_residual"] = test["target"] - test["simple_baseline"]
         test["persistence_residual"] = test["target"] - test["persistence"]
 
         scale = test["rolling28d_std"].replace(0, np.nan)
         fallback_scale = float(np.nanmedian(scale)) if scale.notna().any() else 1.0
         scale = scale.fillna(fallback_scale if fallback_scale > 0 else 1.0)
         test["residual_z"] = test["residual"] / scale
+        test["simple_baseline_residual_z"] = test["simple_baseline_residual"] / scale
         test["persistence_residual_z"] = test["persistence_residual"] / scale
 
         test["ml_upper_band"] = test["prediction"] + ml_upper_residual_q
+        test["simple_baseline_upper_band"] = test["simple_baseline"] + simple_upper_residual_q
         test["persistence_upper_band"] = test["persistence"] + persistence_upper_residual_q
         test["ml_upper_exceedance"] = test["target"] > test["ml_upper_band"]
+        test["simple_baseline_upper_exceedance"] = test["target"] > test["simple_baseline_upper_band"]
         test["persistence_upper_exceedance"] = test["target"] > test["persistence_upper_band"]
         test["ml_anomaly_excess"] = (test["target"] - test["ml_upper_band"]).clip(lower=0)
+        test["simple_baseline_anomaly_excess"] = (test["target"] - test["simple_baseline_upper_band"]).clip(lower=0)
         test["persistence_anomaly_excess"] = (test["target"] - test["persistence_upper_band"]).clip(lower=0)
         test["ml_investigation_score"] = test["ml_anomaly_excess"] / scale
+        test["simple_baseline_investigation_score"] = test["simple_baseline_anomaly_excess"] / scale
         test["persistence_investigation_score"] = test["persistence_anomaly_excess"] / scale
 
         # Backward-compatible aliases refer to the challenger ML model only.
@@ -195,8 +253,10 @@ def rolling_origin_backtest(
         test["test_end"] = test_end
 
         mae_model = mean_absolute_error(test["target"], test["prediction"])
-        mae_base = mean_absolute_error(test["target"], test["persistence"])
-        rel = (mae_base - mae_model) / mae_base if mae_base else np.nan
+        mae_selected = mean_absolute_error(test["target"], test["simple_baseline"])
+        mae_persistence = mean_absolute_error(test["target"], test["persistence"])
+        rel_selected = (mae_selected - mae_model) / mae_selected if mae_selected else np.nan
+        rel_persistence = (mae_persistence - mae_model) / mae_persistence if mae_persistence else np.nan
         fold_rows.append(
             {
                 "fold": fold + 1,
@@ -206,17 +266,27 @@ def rolling_origin_backtest(
                 "train_end": str(train_model["DATE"].max().date()),
                 "test_start": str(test_start.date()),
                 "test_end": str(test_end.date()),
+                "selected_baseline": selected_baseline,
+                "calibration_mae_persistence": baseline_calibration_mae.get("persistence"),
+                "calibration_mae_seasonal_7d": baseline_calibration_mae.get("seasonal_7d"),
+                "calibration_mae_rolling_28d_median": baseline_calibration_mae.get("rolling_28d_median"),
                 "mae_model": float(mae_model),
-                "mae_persistence": float(mae_base),
-                "relative_mae_improvement": float(rel),
+                "mae_selected_baseline": float(mae_selected),
+                "mae_persistence": float(mae_persistence),
+                "relative_mae_improvement": float(rel_selected),
+                "relative_mae_improvement_vs_persistence": float(rel_persistence),
                 "median_ae_model": float(median_absolute_error(test["target"], test["prediction"])),
+                "median_ae_selected_baseline": float(median_absolute_error(test["target"], test["simple_baseline"])),
                 "median_ae_persistence": float(median_absolute_error(test["target"], test["persistence"])),
                 "upper_band_quantile": upper_quantile,
                 "ml_upper_residual_q": ml_upper_residual_q,
+                "simple_baseline_upper_residual_q": simple_upper_residual_q,
                 "persistence_upper_residual_q": persistence_upper_residual_q,
                 "ml_upper_band_coverage": float((test["target"] <= test["ml_upper_band"]).mean()),
+                "simple_baseline_upper_band_coverage": float((test["target"] <= test["simple_baseline_upper_band"]).mean()),
                 "persistence_upper_band_coverage": float((test["target"] <= test["persistence_upper_band"]).mean()),
                 "ml_upper_exceedance_rate": float(test["ml_upper_exceedance"].mean()),
+                "simple_baseline_upper_exceedance_rate": float(test["simple_baseline_upper_exceedance"].mean()),
                 "persistence_upper_exceedance_rate": float(test["persistence_upper_exceedance"].mean()),
             }
         )
@@ -235,8 +305,10 @@ def rolling_origin_backtest(
     dma = per_dma_performance(pred)
 
     mae_model = mean_absolute_error(pred["target"], pred["prediction"])
-    mae_base = mean_absolute_error(pred["target"], pred["persistence"])
+    mae_selected = mean_absolute_error(pred["target"], pred["simple_baseline"])
+    mae_persistence = mean_absolute_error(pred["target"], pred["persistence"])
     dma_rel = dma["relative_mae_improvement"].dropna() if len(dma) else pd.Series(dtype=float)
+    baseline_counts = folds["selected_baseline"].value_counts().to_dict()
     summary = {
         "rows_featured": int(len(d)),
         "test_rows_total": int(len(pred)),
@@ -244,13 +316,20 @@ def rolling_origin_backtest(
         "date_min": str(d["DATE"].min().date()),
         "date_max": str(d["DATE"].max().date()),
         "mae_model": float(mae_model),
-        "mae_persistence": float(mae_base),
-        "relative_mae_improvement": float((mae_base - mae_model) / mae_base) if mae_base else None,
+        "mae_selected_baseline": float(mae_selected),
+        "mae_persistence": float(mae_persistence),
+        "relative_mae_improvement": float((mae_selected - mae_model) / mae_selected) if mae_selected else None,
+        "relative_mae_improvement_vs_persistence": float((mae_persistence - mae_model) / mae_persistence) if mae_persistence else None,
+        "selected_baseline_counts": {str(k): int(v) for k, v in baseline_counts.items()},
+        "latest_selected_baseline": str(folds.iloc[-1]["selected_baseline"]),
         "median_ae_model": float(median_absolute_error(pred["target"], pred["prediction"])),
+        "median_ae_selected_baseline": float(median_absolute_error(pred["target"], pred["simple_baseline"])),
         "median_ae_persistence": float(median_absolute_error(pred["target"], pred["persistence"])),
         "ml_upper_band_coverage": float((pred["target"] <= pred["ml_upper_band"]).mean()),
+        "simple_baseline_upper_band_coverage": float((pred["target"] <= pred["simple_baseline_upper_band"]).mean()),
         "persistence_upper_band_coverage": float((pred["target"] <= pred["persistence_upper_band"]).mean()),
         "ml_upper_exceedance_rate": float(pred["ml_upper_exceedance"].mean()),
+        "simple_baseline_upper_exceedance_rate": float(pred["simple_baseline_upper_exceedance"].mean()),
         "persistence_upper_exceedance_rate": float(pred["persistence_upper_exceedance"].mean()),
         "drift_features_flagged": int(drift.groupby("feature")["drift_flag"].max().sum()),
         "dmas_evaluated": int(len(dma)),
@@ -259,7 +338,6 @@ def rolling_origin_backtest(
         "dma_p10_relative_mae_improvement": float(dma_rel.quantile(0.10)) if len(dma_rel) else None,
         "interpretation": "Positive band exceedances are investigation signals, not confirmed leak labels.",
     }
-    # Backward-compatible summary keys refer to ML challenger band.
     summary["upper_band_coverage"] = summary["ml_upper_band_coverage"]
     summary["upper_exceedance_rate"] = summary["ml_upper_exceedance_rate"]
     return pred, folds, drift, summary
@@ -275,7 +353,6 @@ def promotion_decision(
     policy = policy or PromotionPolicy()
     worst_rel = float(folds["relative_mae_improvement"].min())
     coverage = float(summary.get("ml_upper_band_coverage", summary.get("upper_band_coverage", np.nan)))
-    # Older callers may not have DMA diagnostics; actual v0.4 runs always do.
     dma_share = summary.get("dma_share_model_better", 1.0)
     dma_p10 = summary.get("dma_p10_relative_mae_improvement", 0.0)
 
@@ -293,21 +370,25 @@ def promotion_decision(
         checks["data_contract_passed"] = bool(data_contract.get("passed", False))
 
     promote = all(checks.values())
+    latest_baseline = summary.get("latest_selected_baseline", "persistence")
     return {
-        "champion": "hist_gradient_boosting" if promote else "persistence_baseline",
-        "status": "promote_ml" if promote else "retain_baseline",
+        "champion": "hist_gradient_boosting" if promote else "simple_baseline",
+        "baseline_name": latest_baseline,
+        "status": "promote_ml" if promote else "retain_simple_baseline",
         "checks": checks,
         "policy": asdict(policy),
         "observed": {
-            "relative_mae_improvement": summary["relative_mae_improvement"],
+            "relative_mae_improvement_vs_selected_baseline": summary["relative_mae_improvement"],
+            "relative_mae_improvement_vs_persistence": summary.get("relative_mae_improvement_vs_persistence"),
             "worst_fold_relative_mae_improvement": worst_rel,
             "ml_upper_band_coverage": coverage,
             "dma_share_model_better": dma_share,
             "dma_p10_relative_mae_improvement": dma_p10,
+            "latest_selected_baseline": latest_baseline,
         },
         "data_contract": data_contract,
         "reason": (
-            "ML is selected only when it beats persistence by the configured margin, "
+            "ML is selected only when it beats a simple baseline chosen without test leakage, "
             "is stable across time and DMAs, has plausible uncertainty-band coverage, "
             "and the input data contract passes."
         ),

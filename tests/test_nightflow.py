@@ -26,6 +26,7 @@ def synthetic_nightflow(days: int = 220, dmas: int = 4):
         previous = level
         for t, date in enumerate(dates):
             seasonal = 1.5 * np.sin(2 * np.pi * t / 30)
+            # AR-like signal makes lagged history informative.
             actual = 0.72 * previous + 0.28 * (level + seasonal) + rng.normal(0, 0.35)
             if t in {170, 205} and dma_i == 0:
                 actual += 5.0
@@ -79,7 +80,8 @@ def test_rolling_backtest_has_strict_time_order_and_outputs_uncertainty():
     )
     assert len(folds) == 3
     assert summary["test_rows_total"] == len(pred)
-    assert {"prediction", "persistence", "upper_band", "upper_exceedance"}.issubset(pred.columns)
+    assert {"prediction", "persistence", "simple_baseline", "simple_baseline_name", "upper_band", "upper_exceedance"}.issubset(pred.columns)
+    assert set(folds["selected_baseline"]).issubset({"persistence", "seasonal_7d", "rolling_28d_median"})
     for _, r in folds.iterrows():
         assert pd.Timestamp(r["train_end"]) < pd.Timestamp(r["test_start"])
     assert {"feature", "standardised_mean_difference", "drift_flag"}.issubset(drift.columns)
@@ -97,31 +99,48 @@ def test_promotion_gate_can_retain_baseline():
     folds = pd.DataFrame({"relative_mae_improvement": [0.01, -0.10]})
     summary = {"relative_mae_improvement": 0.01, "upper_band_coverage": 0.90}
     decision = promotion_decision(folds, summary, PromotionPolicy())
-    assert decision["status"] == "retain_baseline"
+    assert decision["status"] == "retain_simple_baseline"
 
 
 def test_calendar_windows_do_not_treat_irregular_rows_as_days():
     raw = synthetic_nightflow(days=20, dmas=1).copy()
+    # Remove several dates so seven observations no longer means seven calendar days.
     raw = raw[~raw["DATE"].isin(pd.to_datetime(["2025-01-04", "2025-01-05", "2025-01-08"]))].copy()
     d = make_features(raw)
     row = d[d["DATE"] == pd.Timestamp("2025-01-15")].iloc[0]
     hist = raw[raw["DATE"] <= pd.Timestamp("2025-01-08")].sort_values("DATE")
     expected = hist.iloc[-1]["ACTUAL_MIN_NIGHT_FLOW"]
     assert np.isclose(row["lag7d"], expected)
+    # Jan 8 is absent, so the source must be older than the nominal t-7 date.
     assert row["lag7d_staleness_days"] > 0
 
 
 def test_baseline_champion_controls_operational_queue():
     pred, folds, _, summary = rolling_origin_backtest(synthetic_nightflow(), n_splits=2)
+    # Force a baseline decision while leaving the prediction table untouched.
     forced = dict(summary)
     forced["relative_mae_improvement"] = -0.01
     decision = promotion_decision(folds, forced, PromotionPolicy())
-    assert decision["champion"] == "persistence_baseline"
+    assert decision["champion"] == "simple_baseline"
     p = latest_investigation_priorities(pred, capacity=2, champion=decision["champion"])
-    assert (p["champion_model"] == "persistence_baseline").all()
-    assert np.allclose(p["expected_flow"], pred[pred["DATE"] == pred["DATE"].max()].set_index("DMA_ID").loc[p["DMA_ID"], "persistence"].to_numpy())
+    latest = pred[pred["DATE"] == pred["DATE"].max()].set_index("DMA_ID")
+    assert p["champion_model"].str.startswith("simple_baseline:").all()
+    assert np.allclose(p["expected_flow"], latest.loc[p["DMA_ID"], "simple_baseline"].to_numpy())
     assert (p["upper_exceedance"] == p["champion_upper_exceedance"]).all()
 
+
+
+def test_simple_baseline_is_selected_before_test_block():
+    pred, folds, _, summary = rolling_origin_backtest(synthetic_nightflow(), n_splits=3)
+    assert "selected_baseline" in folds.columns
+    assert "mae_selected_baseline" in folds.columns
+    assert "relative_mae_improvement_vs_persistence" in folds.columns
+    assert summary["latest_selected_baseline"] in {"persistence", "seasonal_7d", "rolling_28d_median"}
+    # The selected baseline name is fixed within each held-out fold.
+    for fold, g in pred.groupby("fold"):
+        expected = folds.loc[folds["fold"] == fold, "selected_baseline"].iloc[0]
+        assert g["simple_baseline_name"].nunique() == 1
+        assert g["simple_baseline_name"].iloc[0] == expected
 
 def test_data_contract_fails_on_material_missingness():
     from yw_decisioning.nightflow import assess_data_contract
@@ -130,7 +149,7 @@ def test_data_contract_fails_on_material_missingness():
     raw.loc[raw.index[:100], "MIN_NIGHT_FLOW"] = np.nan
     summary, _ = data_quality_report(raw)
     contract = assess_data_contract(summary)
-    assert contract["passed"] is True
+    assert contract["passed"] is True  # 100 / 480 = 20.8%, below the 50% limit
     raw.loc[raw.index[:300], "MIN_NIGHT_FLOW"] = np.nan
     summary2, _ = data_quality_report(raw)
     contract2 = assess_data_contract(summary2)

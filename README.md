@@ -1,12 +1,12 @@
-# Water Utility Decision Intelligence — v0.4
+# Water Utility Decision Intelligence — v0.5
 
 **Independent portfolio project using publicly available Yorkshire Water data; not affiliated with or endorsed by Yorkshire Water.**
 
 Application project for the Yorkshire Water **Senior Data Scientist** role. The project treats modelling as one part of an operational Data/AI product: source provenance, source reconciliation, data contracts, time-aware validation, simple baselines, champion/challenger rules, uncertainty, capacity-aware triage, SQL outputs and evidence controls are explicit.
 
-## v0.4 in one view
+## v0.5 in one view
 
-v0.4 keeps the v0.3 modelling/governance work and adds release-grade source pinning and reproducibility controls for a public GitHub repository.
+v0.5 keeps the v0.4 source-pinning and reproducibility controls and strengthens model evaluation by selecting the strongest simple comparator on calibration data only before each held-out fold.
 
 
 1. **Pinned APR source bootstrap:** large raw APR CSV files are no longer stored in Git. `make bootstrap` retrieves the three official releases and verifies SHA-256, byte size and row count against reviewed pins.
@@ -17,12 +17,12 @@ v0.4 keeps the v0.3 modelling/governance work and adds release-grade source pinn
 ### Retained v0.3 modelling and governance controls
 
 1. **Calendar-time features:** `lag7d`, trailing 7-day and trailing 28-day features are now defined by calendar time, not by a fixed number of observations. This matters when DMA observations are missing or irregular.
-2. **Champion-consistent queue:** if the ML challenger fails the production gate, persistence remains champion and the live investigation queue uses the persistence forecast and its calibrated upper band. v0.2 could retain persistence in governance while still ranking the latest queue from ML outputs.
+2. **Leakage-safe baseline selection:** each fold selects among persistence, a 7-day seasonal baseline and a trailing-28-day median using calibration data only. The held-out test block never chooses its own comparator. If ML fails the gate, the selected simple baseline drives the operational queue.
 3. **Per-DMA stability and data contract:** promotion now checks aggregate error, worst fold, uncertainty coverage, share of DMAs improved and the lower tail of per-DMA relative improvement. A data contract can block promotion before model metrics are considered.
 4. **Official-source reconciliation:** the APR spill-count line is reconciled against Yorkshire Water's published EDM summary. Differences are reported for review and are never silently overwritten.
 5. **Multi-signal resource context:** a Watsit layer compares 2026 rainfall, reservoir stocks and demand with same-month 2023–2025 values using transparent watch rules. It is analyst context, not an official drought classification.
 6. **Evidence register:** every result is marked as executed real data, synthetic validation or not yet executed. Synthetic metrics and unexecuted live-data claims are blocked from CV evidence.
-7. **20 automated tests** now cover modelling, calendar-time features, baseline routing, data contracts, source reconciliation, evidence controls, ArcGIS ingestion and SQL publication.
+7. **21 automated tests** now cover modelling, calendar-time features, baseline routing, data contracts, source reconciliation, evidence controls, ArcGIS ingestion and SQL publication.
 
 ## Executed real-data evidence
 
@@ -107,7 +107,8 @@ ArcGIS annual night-flow tables
     -> data contract / duplicate consolidation
     -> calendar-time lagged features
     -> expanding-window rolling validation
-    -> ML and persistence uncertainty bands
+    -> calibration-only simple-baseline selection
+    -> ML + selected-baseline uncertainty bands
     -> aggregate + per-DMA champion/challenger gate
     -> champion-consistent investigation queue
     -> drift report + SQL product + evidence register
@@ -129,14 +130,14 @@ The calendar-time definition avoids turning a nominal seven-day feature into an 
 
 The ML challenger is promoted only when all default checks pass:
 
-1. aggregate MAE improves on persistence by at least 2%;
-2. no rolling fold is more than 5% worse than persistence;
+1. aggregate MAE improves on the calibration-selected simple baseline by at least 2%;
+2. no rolling fold is more than 5% worse than that selected baseline;
 3. ML one-sided upper-band coverage lies between 85% and 97%;
-4. at least 50% of evaluated DMAs have lower ML MAE than persistence;
+4. at least 50% of evaluated DMAs have lower ML MAE than the selected simple baseline;
 5. the 10th percentile of DMA-level relative improvement is no worse than -25%;
 6. the data contract passes.
 
-If any required check fails, persistence remains champion. The latest operational queue then uses the persistence expectation and persistence uncertainty band.
+If any required check fails, the selected simple baseline remains champion. The latest operational queue then uses that baseline expectation and its uncertainty band.
 
 ### Investigation output
 
@@ -178,7 +179,7 @@ The current build has **3 executed real-data evidence items**. Live DMA performa
 make smoke
 ```
 
-Synthetic outputs are isolated under `results/dev_validation/`. They prove that the full pipeline and governance logic run, including the case where persistence remains champion. Their numerical metrics must not be used on the CV.
+Synthetic outputs are isolated under `results/dev_validation/`. They prove that the full pipeline and governance logic run, including the case where a simple baseline remains champion. Their numerical metrics must not be used on the CV.
 
 ## Full local rebuild
 

@@ -53,12 +53,12 @@ def main() -> None:
     fig = ROOT / "results" / "figures"
     fig.mkdir(parents=True, exist_ok=True)
 
-    # Fold-level champion/challenger comparison.
-    p = folds[["fold", "mae_model", "mae_persistence"]].set_index("fold")
+    # Fold-level challenger versus calibration-selected simple baseline.
+    p = folds[["fold", "mae_model", "mae_selected_baseline", "mae_persistence"]].set_index("fold")
     ax = p.plot(kind="bar", figsize=(8, 4.8))
     ax.set_xlabel("Rolling-origin fold")
     ax.set_ylabel("Mean absolute error")
-    ax.set_title("Night-flow forecast: ML versus persistence")
+    ax.set_title("Night-flow forecast: ML versus selected simple baseline")
     plt.tight_layout()
     plt.savefig(fig / "nightflow_fold_mae.png", dpi=180)
     plt.close()
@@ -76,7 +76,7 @@ def main() -> None:
         plt.savefig(fig / "nightflow_latest_priority_queue.png", dpi=180)
         plt.close()
 
-    report = f"""# Night-flow ML validation — v0.4
+    report = f"""# Night-flow ML validation — v0.5
 
 ## Evidence boundary
 
@@ -95,8 +95,11 @@ This report uses Yorkshire Water DMA night-flow records downloaded by the reposi
 - Folds: **{summary['folds']}**
 - Total held-out rows: **{summary['test_rows_total']:,}**
 - ML MAE: **{summary['mae_model']:.4f}**
+- Calibration-selected simple-baseline MAE: **{summary['mae_selected_baseline']:.4f}**
 - Persistence MAE: **{summary['mae_persistence']:.4f}**
-- Relative MAE improvement: **{100*summary['relative_mae_improvement']:.2f}%**
+- Relative MAE improvement vs selected baseline: **{100*summary['relative_mae_improvement']:.2f}%**
+- Relative MAE improvement vs persistence: **{100*summary['relative_mae_improvement_vs_persistence']:.2f}%**
+- Latest selected baseline: **{summary['latest_selected_baseline']}**
 - ML upper-band coverage: **{100*summary['ml_upper_band_coverage']:.2f}%**
 - Persistence upper-band coverage: **{100*summary['persistence_upper_band_coverage']:.2f}%**
 - ML upper-band exceedance rate: **{100*summary['ml_upper_exceedance_rate']:.2f}%**
@@ -108,11 +111,11 @@ This report uses Yorkshire Water DMA night-flow records downloaded by the reposi
 Decision: **{decision['status']}**  
 Champion: **{decision['champion']}**
 
-The ML model is promoted only if it clears the configured improvement, fold-stability and uncertainty-band checks. If it does not, the persistence baseline remains the operational champion. This avoids deploying a more complex model only because it exists.
+The ML model is promoted only if it clears the configured improvement, fold-stability and uncertainty-band checks against a simple baseline selected on calibration data only. If it does not, the selected simple baseline remains the operational champion. This prevents weak ML from being promoted and prevents choosing a comparator after seeing test outcomes.
 
 ## Operational output
 
-`nightflow_latest_priorities.csv` ranks the latest observed DMA anomalies under a fixed investigation capacity. The score measures how far the observed night flow exceeds the **deployed champion's** calibrated upper band relative to recent DMA variability. If the ML challenger fails promotion, the operational queue uses persistence rather than ML. It supports triage after an observation arrives; it is not a statement that a leak has been confirmed.
+`nightflow_latest_priorities.csv` ranks the latest observed DMA anomalies under a fixed investigation capacity. The score measures how far the observed night flow exceeds the **deployed champion's** calibrated upper band relative to recent DMA variability. If the ML challenger fails promotion, the operational queue uses the calibration-selected simple baseline rather than ML. It supports triage after an observation arrives; it is not a statement that a leak has been confirmed.
 """
     (ROOT / "results" / "NIGHTFLOW_RESULTS.md").write_text(report, encoding="utf-8")
 
