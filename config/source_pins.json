@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-08-21",
+  "sources": {
+    "apr_2023_24": {
+      "url": "https://www.yorkshirewater.com/media/f3dfqojn/csv-file-updated.csv",
+      "path": "data/raw/apr/apr_2023_24.csv",
+      "sha256": "68caac8b00b0fd1de0663fcfc960b5810eea5c5ef91c346e3855c23d20afcf02",
+      "bytes": 1234419,
+      "rows": 10234
+    },
+    "apr_2024_25": {
+      "url": "https://www.yorkshirewater.com/media/t0edabjs/apr-20242025-open-data-csv-file.csv",
+      "path": "data/raw/apr/apr_2024_25.csv",
+      "sha256": "d4a1cbfd9905dcd9b98cdf9e950b69f005f3264928339d7723728297a374435e",
+      "bytes": 1248250,
+      "rows": 8624
+    },
+    "apr_2025_26": {
+      "url": "https://www.yorkshirewater.com/media/asrol3dp/apr-data-tables-open-data-csv-file.csv",
+      "path": "data/raw/apr/apr_2025_26.csv",
+      "sha256": "a0b5cf856936ab50a85babdb9b251783a4bddd161a37db1802e3d87f83a964a4",
+      "bytes": 12994022,
+      "rows": 121937
+    }
+  }
+}

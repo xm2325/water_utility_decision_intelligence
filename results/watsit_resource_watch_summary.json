@@ -1,0 +1,15 @@
+{
+  "latest_month": "July",
+  "latest_year": 2026,
+  "active_watch_signals": 3,
+  "rainfall_provisional_pct_lta": 19.4,
+  "reservoir_pct_monthly_table": 65.0,
+  "reservoir_vs_hist_median_pp": -3.0,
+  "demand_ml_day": 1382.0,
+  "demand_vs_hist_median_pct": 7.1234788000930305,
+  "demand_above_hist_max": true,
+  "evidence_boundary": "Watch signals are transparent descriptive rules against same-month 2023-2025 values. They are not Yorkshire Water drought classifications, causal estimates or asset-failure probabilities.",
+  "current_status_reservoir_pct": 64.9,
+  "river_status": "Some of our rivers are below critical level",
+  "headline_source_month": "July 2026"
+}

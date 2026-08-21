@@ -1,0 +1,13 @@
+{
+  "latest_rows": 121937,
+  "common_3a_rows": 36,
+  "common_3a_with_numeric_payment": 18,
+  "common_3a_pcl_not_met": 12,
+  "common_3a_pcl_not_met_with_numeric_payment": 11,
+  "gross_negative_payment_exposure_m": 76.7545828878746,
+  "positive_payments_m": 15.86250136851338,
+  "net_parsed_payment_m": -60.89208151936122,
+  "top3_negative_payment_share": 0.6684345793062753,
+  "storm_overflow_first_to_latest_change": -0.33694268335026556,
+  "evidence_boundary": "Common 3A extract only; not Yorkshire Water's total company ODI position and not an estimate of avoidable payments."
+}

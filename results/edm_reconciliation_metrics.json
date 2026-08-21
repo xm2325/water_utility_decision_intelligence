@@ -1,0 +1,11 @@
+{
+  "comparable_years": 3,
+  "matched_years": 2,
+  "mismatched_years": 1,
+  "max_absolute_difference": 156.0,
+  "max_absolute_relative_difference": 0.003025601241272304,
+  "years_requiring_review": [
+    2025
+  ],
+  "interpretation": "Official-source mismatches are surfaced for review and are not automatically reconciled. A mismatch does not by itself identify which publication is authoritative for a given use."
+}

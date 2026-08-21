@@ -1,0 +1,6 @@
+evidence_id,evidence_type,status,source,artifact,allowed_claim,prohibited_claim
+apr_2025_26,executed_real_data,available,Yorkshire Water APR Open Data CSV,results/apr_metrics.json,APR portfolio statistics and observed payment exposure only,avoided ODI payment or causal operational impact
+edm_apr_reconciliation,executed_real_data,available,Yorkshire Water APR CSV + published EDM summary,results/edm_reconciliation_metrics.json,official-source agreement/mismatch statistics,asserting which source is authoritative without reporting context
+watsit_resource_watch,executed_real_data,available,Yorkshire Water Watsit published monthly resource data,results/watsit_resource_watch_summary.json,published rainfall/reservoir/demand context and transparent historical comparisons,"official drought classification, causal effect, or asset-failure probability"
+nightflow_live_backtest,not_yet_executed,blocked_pending_network_run,Yorkshire Water ArcGIS DMA night-flow tables,,pipeline design only,"leak detection, avoided incidents, or unexecuted MAE improvement"
+nightflow_synthetic_smoke,synthetic_validation,available,repository-generated synthetic DMA time series,results/dev_validation/nightflow_backtest_metrics.json,software integration and gate-behaviour validation,CV performance metric or Yorkshire Water operational result

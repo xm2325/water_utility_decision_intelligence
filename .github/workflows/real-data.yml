@@ -1,0 +1,69 @@
+name: real-data-validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yorkshire-water-real-data
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Download and verify pinned APR releases
+        run: make bootstrap
+
+      - name: Run unit tests
+        run: pytest -q
+
+      - name: Rebuild executed APR analysis
+        run: python scripts/run_apr_analysis.py
+
+      - name: Reconcile APR against current EDM publication
+        run: python scripts/run_edm_reconciliation.py
+
+      - name: Rebuild Watsit multi-signal context
+        run: python scripts/run_resource_watch.py
+
+      - name: Refresh Yorkshire Water ArcGIS data
+        run: python scripts/download_arcgis.py night_flow_2023 night_flow_2024 night_flow_2025 night_flow_2026 reservoir_2026 dwq_2026
+
+      - name: Run night-flow rolling-origin validation
+        run: python scripts/run_nightflow_model.py --splits 4 --capacity 20
+
+      - name: Build SQL operational product
+        run: python scripts/build_operational_store.py
+
+      - name: Build evidence register
+        run: python scripts/build_evidence_register.py
+
+      - name: Upload auditable outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: yorkshire-water-real-data-results
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            results/
+            data/raw/arcgis/download_manifest.jsonl
+            data/raw/arcgis/night_flow_*.csv

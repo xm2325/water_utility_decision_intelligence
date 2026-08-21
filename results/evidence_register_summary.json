@@ -1,0 +1,5 @@
+{
+  "real_evidence_items_available": 3,
+  "live_nightflow_claims_ready": false,
+  "application_claim_boundary": "APR, source-reconciliation and Watsit resource-watch statistics are currently usable. Night-flow performance metrics remain blocked until a network-enabled real-data run produces raw ArcGIS files, provenance manifest and root-level backtest metrics."
+}
