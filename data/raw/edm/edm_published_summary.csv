@@ -1,0 +1,8 @@
+year,average_rainfall_mm,days_over_6mm_rainfall,storm_overflows_with_data,total_discharges,total_duration_hours,source_url,retrieved_date
+2019,1028,51,697,22821,107836,https://www.yorkshirewater.com/environment/river-health/storm-overflow-investment/event-duration-monitoring/,2026-08-21
+2020,1078,64,2105,65083,420419,https://www.yorkshirewater.com/environment/river-health/storm-overflow-investment/event-duration-monitoring/,2026-08-21
+2021,989,51,2087,70062,406131,https://www.yorkshirewater.com/environment/river-health/storm-overflow-investment/event-duration-monitoring/,2026-08-21
+2022,915,50,2118,54273,232054,https://www.yorkshirewater.com/environment/river-health/storm-overflow-investment/event-duration-monitoring/,2026-08-21
+2023,1193,71,2167,77761,516386,https://www.yorkshirewater.com/environment/river-health/storm-overflow-investment/event-duration-monitoring/,2026-08-21
+2024,1050,55,2171,68164,430263,https://www.yorkshirewater.com/environment/river-health/storm-overflow-investment/event-duration-monitoring/,2026-08-21
+2025,906,48,2176,51404,285230,https://www.yorkshirewater.com/environment/river-health/storm-overflow-investment/event-duration-monitoring/,2026-08-21

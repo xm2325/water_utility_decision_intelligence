@@ -1,0 +1,38 @@
+{
+  "version": "0.4.0",
+  "built_at_utc": "2026-08-21T12:08:12.456364+00:00",
+  "automated_test_functions": 20,
+  "live_nightflow_claims_ready": false,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "bytes": 9702,
+      "sha256": "fdd72d039c1a67570d70251d03031bc7cdab1203c73b95c8402316977d0b8098"
+    },
+    {
+      "path": "results/apr_metrics.json",
+      "bytes": 581,
+      "sha256": "05d836494ae3b8f0b6d47ffe5d1c10731e2b577de5178d5ebc7c857fb8ee1d94"
+    },
+    {
+      "path": "results/edm_reconciliation_metrics.json",
+      "bytes": 417,
+      "sha256": "908117d54257d0ce7357c3da8f3859e2296abbdbc49693dc98573fb532b9d69d"
+    },
+    {
+      "path": "results/watsit_resource_watch_summary.json",
+      "bytes": 668,
+      "sha256": "f471f51d98b33bbf319c523da0b3a7490d86aa0f7e427f620131916f0477dfe1"
+    },
+    {
+      "path": "results/EVIDENCE_REGISTER.csv",
+      "bytes": 1325,
+      "sha256": "462898e19b490468fd4522822b8d60b6f1ea01c0bc9fc9cd45a8d9a0217edefc"
+    },
+    {
+      "path": "results/operational_decision_product.sqlite",
+      "bytes": 36864,
+      "sha256": "8878daff04f26a6ba5311558f8b50d298f0a9f90f65e7992685df6178896e0c8"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+import ast
+import hashlib
+import json
+import platform
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+RESULTS = ROOT / "results"
+
+
+def sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def count_tests() -> int:
+    total = 0
+    for path in sorted((ROOT / "tests").glob("test_*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        total += sum(isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name.startswith("test_") for n in ast.walk(tree))
+    return total
+
+
+lock_path = ROOT / "requirements-lock.txt"
+key_paths = [
+    ROOT / "README.md",
+    lock_path,
+    RESULTS / "environment_snapshot.txt",
+    RESULTS / "apr_metrics.json",
+    RESULTS / "edm_reconciliation_metrics.json",
+    RESULTS / "watsit_resource_watch_summary.json",
+    RESULTS / "EVIDENCE_REGISTER.csv",
+    RESULTS / "operational_decision_product.sqlite",
+    RESULTS / "nightflow_decision_value_metrics.json",
+    RESULTS / "nightflow_capacity_frontier_metrics.json",
+    RESULTS / "nightflow_policy_bootstrap_metrics.json",
+    RESULTS / "nightflow_temporal_robustness_metrics.json",
+    RESULTS / "nightflow_continuity_metrics.json",
+    RESULTS / "live_validation_provenance.json",
+]
+evidence_summary = json.loads((RESULTS / "evidence_register_summary.json").read_text())
+manifest = {
+    "version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
+    "built_at_utc": datetime.now(timezone.utc).isoformat(),
+    "runtime": {
+        "python": platform.python_version(),
+        "implementation": platform.python_implementation(),
+        "platform": platform.platform(),
+    },
+    "dependency_lock": {
+        "path": "requirements-lock.txt",
+        "sha256": sha256(lock_path),
+        "bytes": lock_path.stat().st_size,
+    },
+    "automated_test_functions": count_tests(),
+    "live_nightflow_claims_ready": evidence_summary["live_nightflow_claims_ready"],
+    "decision_value_claims_ready": evidence_summary.get("decision_value_claims_ready", False),
+    "capacity_frontier_claims_ready": evidence_summary.get("capacity_frontier_claims_ready", False),
+    "policy_robustness_claims_ready": evidence_summary.get("policy_robustness_claims_ready", False),
+    "temporal_robustness_claims_ready": evidence_summary.get("temporal_robustness_claims_ready", False),
+    "continuity_claims_ready": evidence_summary.get("continuity_claims_ready", False),
+    "live_provenance_verified": evidence_summary.get("live_provenance_verified", False),
+    "capacity_frontier_provenance_verified": evidence_summary.get("capacity_frontier_provenance_verified", False),
+    "policy_robustness_provenance_verified": evidence_summary.get("policy_robustness_provenance_verified", False),
+    "temporal_robustness_provenance_verified": evidence_summary.get("temporal_robustness_provenance_verified", False),
+    "continuity_provenance_verified": evidence_summary.get("continuity_provenance_verified", False),
+    "artifacts": [
+        {
+            "path": str(p.relative_to(ROOT)),
+            "bytes": p.stat().st_size,
+            "sha256": sha256(p),
+        }
+        for p in key_paths if p.exists()
+    ],
+}
+(RESULTS / "RELEASE_MANIFEST.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+print(json.dumps(manifest, indent=2))

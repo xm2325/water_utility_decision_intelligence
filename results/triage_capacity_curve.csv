@@ -1,0 +1,11 @@
+capacity_workstreams,cumulative_observed_exposure_m,observed_exposure_share,last_added_pc,last_added_reference
+1,18.6825092710942,0.2434057820154683,Serious pollution incidents,3A.12
+2,37.0207950316642,0.482326834942811,Total pollution incidents,3A.24
+3,51.3054173224851,0.6684345793062753,Internal sewer flooding,3A.21
+4,61.03698189748375,0.7952226381928021,Bathing water quality,3A.18
+5,67.16427750459422,0.8750523418609389,Water supply interruptions,3A.14
+6,70.59227750459422,0.9197141701325839,Greenhouse gas emissions (water),3A.6
+7,73.60370524030238,0.9589486708282275,Per capita consumption,3A.10
+8,76.03550879221237,0.9906315158182453,Compliance risk index (CRI),3A.3
+9,76.46821999563525,0.996269110176031,Customer contacts about water quality,3A.4
+10,76.75458288787459,0.9999999999999998,Business demand,3A.2

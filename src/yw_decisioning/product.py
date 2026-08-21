@@ -1,0 +1,178 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+import sqlite3
+
+import pandas as pd
+
+
+RESULT_TABLES = {
+    "common_pc_portfolio_2025_26.csv": "apr_common_pc_portfolio",
+    "triage_capacity_curve.csv": "apr_triage_capacity_curve",
+    "storm_overflow_spills_apr.csv": "apr_storm_overflow_spills",
+    "nightflow_fold_metrics.csv": "nightflow_fold_metrics",
+    "nightflow_drift_report.csv": "nightflow_drift_report",
+    "nightflow_latest_priorities.csv": "nightflow_latest_priorities",
+    "nightflow_data_quality_by_dma.csv": "nightflow_data_quality_by_dma",
+    "nightflow_dma_performance.csv": "nightflow_dma_performance",
+    "edm_apr_reconciliation.csv": "edm_apr_reconciliation",
+    "watsit_resource_watch_2026.csv": "watsit_resource_watch_2026",
+    "nightflow_policy_capacity_summary.csv": "nightflow_policy_capacity_summary",
+    "nightflow_policy_queue_stability.csv": "nightflow_policy_queue_stability",
+    "nightflow_policy_dma_concentration.csv": "nightflow_policy_dma_concentration",
+    "nightflow_continuity_sensitivity.csv": "nightflow_continuity_sensitivity",
+    "nightflow_capacity_frontier.csv": "nightflow_capacity_frontier",
+    "nightflow_policy_bootstrap_summary.csv": "nightflow_policy_bootstrap_summary",
+    "nightflow_policy_bootstrap_comparisons.csv": "nightflow_policy_bootstrap_comparisons",
+    "nightflow_policy_quarterly_summary.csv": "nightflow_policy_quarterly_summary",
+    "nightflow_policy_quarterly_comparisons.csv": "nightflow_policy_quarterly_comparisons",
+}
+
+
+def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dict:
+    """Publish result tables into a small read-only-friendly SQLite product."""
+
+    results_dir = Path(results_dir)
+    db_path = Path(db_path)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    if db_path.exists():
+        db_path.unlink()
+
+    loaded: dict[str, int] = {}
+    with sqlite3.connect(db_path) as con:
+        for filename, table in RESULT_TABLES.items():
+            path = results_dir / filename
+            if not path.exists():
+                continue
+            df = pd.read_csv(path)
+            df.to_sql(table, con, if_exists="replace", index=False)
+            loaded[table] = int(len(df))
+
+        meta = pd.DataFrame(
+            [
+                {
+                    "built_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "source_results_dir": str(results_dir.resolve()),
+                    "tables_loaded": len(loaded),
+                }
+            ]
+        )
+        meta.to_sql("product_metadata", con, if_exists="replace", index=False)
+
+        if "apr_common_pc_portfolio" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_apr_negative_payment_priority AS
+                SELECT rag_reference, line_description, pcl_met, payment_m,
+                       underperformance_exposure_m, exposure_share
+                FROM apr_common_pc_portfolio
+                WHERE underperformance_exposure_m > 0
+                ORDER BY underperformance_exposure_m DESC
+                """
+            )
+
+        if "nightflow_latest_priorities" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_current_dma_investigation_queue AS
+                SELECT *
+                FROM nightflow_latest_priorities
+                WHERE within_capacity IN (1, 'True', 'true')
+                ORDER BY priority_rank
+                """
+            )
+
+        if "watsit_resource_watch_2026" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_latest_resource_watch AS
+                SELECT *
+                FROM watsit_resource_watch_2026
+                WHERE month_num = (SELECT MAX(month_num) FROM watsit_resource_watch_2026)
+                """
+            )
+
+        if "edm_apr_reconciliation" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_source_reconciliation_review AS
+                SELECT *
+                FROM edm_apr_reconciliation
+                WHERE review_status <> 'matched'
+                ORDER BY calendar_year DESC
+                """
+            )
+
+        if "nightflow_policy_capacity_summary" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_capacity_tradeoff AS
+                SELECT policy, capacity, signal_capture, candidate_precision, candidate_recall,
+                       mean_backlog_candidates, capacity_utilisation, analyst_hours_per_day,
+                       mean_consecutive_day_jaccard, mean_previous_queue_retention, selection_hhi
+                FROM nightflow_policy_capacity_summary
+                ORDER BY capacity, policy
+                """
+            )
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_policy_capacity20 AS
+                SELECT *
+                FROM nightflow_policy_capacity_summary
+                WHERE capacity = 20
+                ORDER BY signal_capture DESC, candidate_precision DESC
+                """
+            )
+
+        if "nightflow_capacity_frontier" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_capacity_marginal_value AS
+                SELECT capacity, previous_capacity, mean_selected_per_day, signal_capture,
+                       candidate_recall, mean_backlog_candidates, capacity_utilisation,
+                       delta_selected_per_day, delta_signal_capture_pp,
+                       marginal_capture_pp_per_extra_review, backlog_reduction_per_day,
+                       backlog_reduction_per_extra_review, unused_capacity_per_day
+                FROM nightflow_capacity_frontier
+                ORDER BY capacity
+                """
+            )
+
+        if "nightflow_policy_bootstrap_summary" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_policy_robustness AS
+                SELECT policy, capacity, point_signal_capture, ci_lower, ci_upper,
+                       block_length_days, bootstrap_replicates, held_out_dates
+                FROM nightflow_policy_bootstrap_summary
+                ORDER BY point_signal_capture DESC
+                """
+            )
+
+        if "nightflow_policy_quarterly_summary" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_temporal_robustness AS
+                SELECT quarter, policy, observed_days, signal_capture,
+                       mean_selected_per_day, mean_candidates_per_day, candidate_recall
+                FROM nightflow_policy_quarterly_summary
+                ORDER BY quarter, signal_capture DESC
+                """
+            )
+
+        if "nightflow_continuity_sensitivity" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_continuity_frontier AS
+                SELECT carryover_fraction, signal_capture, signal_capture_cost_pp_vs_zero,
+                       mean_consecutive_day_jaccard, mean_previous_queue_retention,
+                       mean_continuity_selected_per_day, selection_hhi
+                FROM nightflow_continuity_sensitivity
+                ORDER BY carryover_fraction
+                """
+            )
+
+        con.commit()
+
+    return {"database": str(db_path), "tables": loaded}

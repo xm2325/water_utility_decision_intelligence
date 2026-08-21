@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements-lock.txt
+
+      - name: Install locked dependencies
+        run: |
+          pip install -r requirements-lock.txt
+          pip check
+
+      - name: Download and verify pinned APR releases
+        run: make bootstrap
+
+      - name: Run pinned-source rebuild
+        run: make all
+
+      - name: Check release evidence boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          summary = json.loads(Path('results/evidence_register_summary.json').read_text())
+          assert summary['real_evidence_items_available'] >= 3
+          assert summary['live_nightflow_claims_ready'] is False
+          print(summary)
+          PY

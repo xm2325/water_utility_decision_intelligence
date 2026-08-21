@@ -1,0 +1,17 @@
+{
+  "real_evidence_items_available": 6,
+  "live_nightflow_claims_ready": true,
+  "decision_value_claims_ready": true,
+  "continuity_claims_ready": true,
+  "live_provenance_verified": true,
+  "live_provenance_detail": {
+    "problems": [],
+    "files_checked": 6
+  },
+  "continuity_provenance_verified": true,
+  "continuity_provenance_detail": {
+    "problems": [],
+    "files_checked": 4
+  },
+  "application_claim_boundary": "Executed public-data claims may cover APR portfolio statistics, source reconciliation, Watsit context, night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture, review-workload and candidate-only queue-continuity sensitivity metrics. Do not describe anomaly signals as confirmed leaks, call a continuity quota optimal, or convert signals into avoided incidents, recovered water, ODI recovery or financial return."
+}

@@ -1,0 +1,94 @@
+name: real-data-validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yorkshire-water-real-data
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements-lock.txt
+
+      - name: Install locked dependencies
+        run: |
+          pip install -r requirements-lock.txt
+          pip check
+          mkdir -p results
+          python -m pip freeze > results/environment_snapshot.txt
+
+      - name: Download and verify pinned APR releases
+        run: make bootstrap
+
+      - name: Run unit tests
+        run: pytest -q
+
+      - name: Rebuild executed APR analysis
+        run: python scripts/run_apr_analysis.py
+
+      - name: Reconcile APR against current EDM publication
+        run: python scripts/run_edm_reconciliation.py
+
+      - name: Rebuild Watsit multi-signal context
+        run: python scripts/run_resource_watch.py
+
+      - name: Refresh Yorkshire Water ArcGIS data
+        run: python scripts/download_arcgis.py night_flow_2023 night_flow_2024 night_flow_2025 night_flow_2026 reservoir_2026 dwq_2026
+
+      - name: Run night-flow rolling-origin validation
+        run: python scripts/run_nightflow_model.py --splits 4 --capacity 20
+
+      - name: Evaluate capacity-aware review policies
+        run: python scripts/run_decision_value.py --capacities 5,10,20,40 --minutes-per-review 20
+
+      - name: Build marginal capacity / residual-signal frontier
+        run: python scripts/run_capacity_frontier.py --policy capacity_constrained
+
+      - name: Run moving-block bootstrap policy robustness
+        run: python scripts/run_policy_robustness.py --capacity 20 --block-lengths 3,7,14 --bootstrap 1000 --seed 20260821
+
+      - name: Evaluate frozen-policy calendar-quarter robustness
+        run: python scripts/run_temporal_robustness.py --capacity 20
+
+      - name: Evaluate candidate-only queue continuity sensitivity
+        run: python scripts/run_continuity_sensitivity.py --capacity 20 --fractions 0,0.10,0.25,0.50 --minutes-per-review 20
+
+      - name: Bind compact live outputs to provenance hashes
+        run: python scripts/build_live_provenance.py
+
+      - name: Build SQL operational product
+        run: python scripts/build_operational_store.py
+
+      - name: Build evidence register
+        run: python scripts/build_evidence_register.py
+
+      - name: Build release manifest
+        run: python scripts/build_release_manifest.py
+
+      - name: Upload auditable outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: yorkshire-water-real-data-results
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            results/
+            data/raw/arcgis/download_manifest.jsonl
+            data/raw/arcgis/night_flow_*.csv

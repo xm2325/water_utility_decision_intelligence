@@ -1,0 +1,12 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+results/nightflow_backtest_predictions.csv
+results/figures/*.png
+results/operational_decision_product.sqlite
+results/dev_validation/*.csv
+results/dev_validation/*.json
+data/raw/arcgis/*.csv
+data/raw/apr/*.csv
+data/raw/apr/*.part
