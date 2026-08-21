@@ -37,7 +37,13 @@ TEMPORAL_ROBUSTNESS_FILES = (
     "nightflow_temporal_robustness_metrics.json",
 )
 
-LIVE_FILES = DECISION_FILES + CAPACITY_FRONTIER_FILES + ROBUSTNESS_FILES + CONTINUITY_FILES + TEMPORAL_ROBUSTNESS_FILES
+LIVE_FILES = tuple(dict.fromkeys(
+    DECISION_FILES
+    + CAPACITY_FRONTIER_FILES
+    + ROBUSTNESS_FILES
+    + CONTINUITY_FILES
+    + TEMPORAL_ROBUSTNESS_FILES
+))
 
 
 def sha256_file(path: str | Path) -> str:
@@ -71,12 +77,13 @@ def verify_live_provenance(root: str | Path, required: tuple[str, ...] = LIVE_FI
     if not path.exists():
         return False, {"reason": "provenance_missing"}
     payload = json.loads(path.read_text(encoding="utf-8"))
+    required_unique = tuple(dict.fromkeys(required))
     problems = []
-    for name in required:
+    for name in required_unique:
         target = root / "results" / name
         recorded = payload.get("files", {}).get(name, {}).get("sha256")
         if not target.exists() or not recorded:
             problems.append(f"missing:{name}")
         elif sha256_file(target) != recorded:
             problems.append(f"hash_mismatch:{name}")
-    return not problems, {"problems": problems, "files_checked": len(required)}
+    return not problems, {"problems": problems, "files_checked": len(required_unique)}

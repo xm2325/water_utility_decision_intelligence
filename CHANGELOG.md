@@ -1,92 +1,69 @@
 # Changelog
 
+## v1.0.0 — 2026-08-21
+
+- Promoted the portfolio to an application-ready release after GitHub Actions verified the full v0.10 public-data chain.
+- Added an executive-first README, interview case study, JD traceability and a clear current/reference architecture boundary.
+- Added a fully pinned Python dependency lock from the verified GitHub Python 3.11 environment and made CI/live workflows install from that lock.
+- Upgraded `actions/checkout` and `actions/setup-python` to Node-24-compatible majors and added `pip check` plus a live environment snapshot.
+- Deduplicated provenance requirements before verification so `files_checked` counts unique evidence inputs.
+- Added dependency-lock/runtime metadata to the release manifest.
+- Kept the model and policies frozen: persistence remains champion; capacity and continuity values remain reported sensitivities rather than claimed optima.
+
+## v0.10.0 — 2026-08-21
+
+- Added frozen-policy calendar-quarter robustness without quarter-specific retraining or threshold tuning.
+- GitHub real-data validation confirmed the capacity-constrained policy beat highest-flow in all 8 held-out calendar-quarter slices.
+- Absolute constrained-policy capture ranged from 76.9% to 95.1%, exposing time heterogeneity rather than hiding it behind the 85.3% aggregate result.
+- Added quarter-level compact outputs, provenance/evidence checks and SQLite publication.
+- GitHub clean CI passed 53 tests.
+
+## v0.9.0 — 2026-08-21
+
+- Added moving-block bootstrap robustness for the frozen capacity-20 decision policies using 3-, 7- and 14-day blocks.
+- The 7-day 95% interval for constrained-policy residual-signal capture was 82.4%–88.2%; the advantage over highest-flow was 41.93–52.92 percentage points.
+- Bound the daily policy input and bootstrap outputs to the same live-run provenance and added fail-closed evidence controls.
+
+## v0.8.0 — 2026-08-21
+
+- Added a marginal capacity / residual-signal frontier for the candidate-only constrained review policy.
+- Marginal gains use actual reviews selected per day rather than nominal capacity because unused slots are allowed.
+- Verified marginal capture gain fell from 3.38 to 1.70 to 0.86 percentage points per extra actual review across 5→10→20→40 capacity steps.
+- Added frontier provenance/evidence controls and a SQLite marginal-value view.
+
 ## v0.7.0 — 2026-08-21
 
 - Added candidate-only queue-continuity sensitivity after the forecasting champion and anomaly threshold are frozen.
-- Continuity can prioritise only DMAs that remain current positive candidates; yesterday's queue can never retain a non-candidate.
-- Added 0%, 10%, 25% and 50% carry-over reserve scenarios at capacity 20 without selecting a post-hoc optimum.
-- GitHub real-data validation confirmed mean queue Jaccard rising from 0.0262 at 0% to 0.0381 / 0.0487 / 0.0505 while signal capture remains 85.24% / 85.07% / 84.99% at 10% / 25% / 50%.
-- Added continuity/capture cost, previous-queue retention, continuity slots used, backlog, capacity utilisation and DMA concentration outputs.
-- Added continuity metrics to live provenance and a separate fail-closed evidence item.
-- Added `v_nightflow_continuity_frontier` to the SQLite operational product.
-- Expanded the automated suite from 28 to **34 tests**.
+- A previous queue can prioritise a DMA only if it remains a positive current candidate.
+- GitHub real-data validation confirmed mean queue Jaccard rising from 0.0262 at 0% to 0.0381 / 0.0487 / 0.0505 while signal capture remains 85.24% / 85.07% / 84.99% at 10% / 25% / 50% carry-over.
+- Added continuity metrics to live provenance and the SQLite operational product.
 
 ## v0.6.0 — 2026-08-21
 
 - Added downstream capacity-aware DMA review evaluation after the forecasting champion is frozen.
-- Compared deterministic random, highest-flow, anomaly-score and capacity-constrained policies at daily capacities 5, 10, 20 and 40.
-- Added residual-signal capture, candidate precision/recall, backlog, capacity utilisation, workload scenario, queue Jaccard/retention and DMA concentration/HHI metrics.
-- GitHub real-data validation confirmed on 210,841 held-out observations that capacity 20 retains 85.3% of positive residual-excess signal while reviewing 52.6% of candidate alerts; highest-flow retains 38.9% and deterministic random 5.5%.
-- Added explicit queue-churn reporting: the constrained anomaly queue has mean consecutive-day Jaccard about 0.026, making field-team continuity a visible trade-off.
-- Vectorised daily policy ranking so the real-data decision simulation runs in seconds rather than repeated per-day sorting.
-- Added live-run provenance hashes so compact committed metrics remain traceable without storing the 424,695 raw ArcGIS records in Git.
-- Added SQLite views for capacity trade-offs and the capacity-20 policy comparison.
-- Expanded the automated suite from 21 to **28 tests**.
+- Compared deterministic random, highest-flow, anomaly-score and capacity-constrained policies at capacities 5, 10, 20 and 40.
+- GitHub real-data validation confirmed that capacity 20 retained 85.3% of positive residual-excess signal while reviewing 52.6% of candidate alerts; highest-flow retained 38.9% and deterministic random 5.5%.
+- Added workload, queue-stability and DMA-concentration metrics plus live-run provenance.
 
 ## v0.5.0 — 2026-08-21
 
-- Replaced the single fixed persistence comparator with a leakage-safe simple-baseline set: persistence, 7-day seasonal and trailing-28-day median.
-- Selects the baseline from the calibration block only before each held-out rolling-origin fold; the test block cannot choose its own comparator.
-- Promotion now requires ML to beat the selected simple baseline, not merely persistence.
-- Added selected-baseline uncertainty bands and champion-consistent operational routing when ML is rejected.
-- Retained persistence metrics separately for auditability and easier interpretation.
-- Added fold-level baseline-selection outputs and one additional regression test; local suite is now 21/21.
+- Replaced the single fixed persistence comparator with a calibration-only simple-baseline set: persistence, 7-day seasonal and trailing-28-day median.
+- Promotion requires ML to beat the selected simple baseline rather than choosing the comparator from the test period.
+- All four real-data folds selected persistence; the operational champion remained the simple baseline.
 
 ## v0.4.0 — 2026-08-21
 
-- Moved the three large APR raw CSV releases out of Git and added `make bootstrap` for official-source retrieval.
-- Added reviewed URL, SHA-256, byte-size and row-count pins for 2023/24, 2024/25 and 2025/26 APR releases.
-- Added fail-closed source-drift handling: a republished upstream file cannot silently alter portfolio results.
-- Added a retrieval manifest for APR downloads.
-- Added source-pin tests and raised the local test count from 18 to 20.
-- Added pull-request triggering to the network-enabled real-data workflow so the ArcGIS live chain can be validated before merge.
-- Added an explicit public-repository disclaimer: this is an independent portfolio project, not a Yorkshire Water system.
+- Moved large APR raw CSV releases out of Git and added `make bootstrap` for official-source retrieval.
+- Added reviewed URL, SHA-256, byte-size and row-count pins and fail-closed source-drift handling.
+- Added pull-request triggering to the network-enabled real-data workflow and an explicit public-project disclaimer.
 
-## 0.3.0 — 2026-08-21
+## v0.3.0 — 2026-08-21
 
-### Forecast correctness
+- Replaced observation-count windows with calendar-time lag/rolling features and added staleness/gap features.
+- Added data contracts, per-DMA evaluation, separate uncertainty bands, champion-consistent queue routing, APR↔EDM reconciliation, Watsit resource context and evidence governance.
 
-- Replaced observation-count `lag7`/rolling windows with calendar-time `lag7d`, trailing 7-day and trailing 28-day features.
-- Added lag staleness and time-gap features for irregular observation schedules.
-- Kept the current target outside every flow-derived predictor.
-- Made the latest investigation queue use the **deployed champion**. If persistence wins the gate, its forecast, upper band and exceedance signal drive the queue.
+## v0.2.0 — 2026-08-21
 
-### Model assurance
-
-- Added a pre-model data contract covering date span, DMA count, actual/reference missingness, duplicate-key rate, negative-flow rate and units.
-- Added per-DMA model-vs-persistence evaluation.
-- Extended promotion rules with the share of DMAs improved and a lower-tail DMA performance check.
-- Calibrated and reported separate one-sided uncertainty bands for ML and persistence.
-
-### Official-source reconciliation
-
-- Added a cached Yorkshire Water EDM published-summary snapshot and APR↔EDM reconciliation.
-- 2023 and 2024 spill counts match across the two sources.
-- The current 2025 EDM publication reports 51,404 versus 51,560 in the local 2025/26 APR line: a 156-event (0.303%) source-version difference.
-- The difference is routed to a review table; the code does not silently replace either value.
-
-### Multi-signal resource context
-
-- Added a Watsit monthly snapshot with rainfall, reservoir and demand data.
-- Added same-calendar-month comparisons against 2023–2025 history.
-- Added three transparent analyst watch rules without treating them as official drought definitions.
-- Added `v_latest_resource_watch` to the SQLite product.
-
-### Evidence governance
-
-- Added `EVIDENCE_REGISTER.csv` and `RELEASE_READINESS.md`.
-- Executed real-data, synthetic validation and pending live-data claims are classified separately.
-- Root-level live DMA claims require raw ArcGIS files, a download manifest and real backtest outputs.
-
-### Testing and product
-
-- Expanded the automated test suite from 12 to **18 passing tests**.
-- Added source-reconciliation, resource-watch, calendar-window, champion-routing, data-contract and evidence-leakage tests.
-- Added SQL tables/views for source review and resource context.
-
-## 0.2.0 — 2026-08-21
-
-- Fixed the v0.1 target/persistence forecast-horizon mismatch.
+- Fixed the original target/persistence horizon mismatch.
 - Replaced a single split with expanding-window rolling validation.
-- Added ML vs persistence promotion rules, uncertainty bands, drift checks, source provenance, SQLite outputs and synthetic integration testing.
-- Expanded the test suite to 12 tests.
+- Added ML-vs-baseline promotion rules, uncertainty bands, drift checks, source provenance, SQLite outputs and synthetic integration testing.

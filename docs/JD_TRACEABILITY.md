@@ -1,22 +1,29 @@
-# Yorkshire Water Senior Data Scientist — project traceability
+# Senior Data Scientist role traceability
 
-This file maps the public job description to evidence in this project. It also states gaps rather than treating architecture or source availability as completed experience.
+This table maps repository evidence to the Yorkshire Water Senior Data Scientist requirements that the project can reasonably demonstrate. It also states where the repository is only partial evidence or no evidence at all.
 
-| Job-description area | Project evidence | Evidence level / gap |
+| Role area | Evidence in this repository | Strength |
 |---|---|---|
-| Own Data & AI products and prioritise delivery | Separate regulatory triage, source-review, resource-watch and DMA queue outputs; SQL product; release-readiness register | Executed locally for APR/EDM/Watsit; DMA live metrics pending |
-| Develop actionable insight and decision models | Capacity-aware APR triage; DMA investigation ranking under capacity | APR executed; DMA design tested synthetically, real live run pending |
-| Python / SQL | Python package, scripts, tests, SQLite tables/views and operational SQL | Executed |
-| R | Not used in this repository | Gap; do not claim from this project |
-| Azure / Databricks / cloud | `ARCHITECTURE.md` maps raw/validated zones, Databricks/Delta, MLflow and monitoring | Design only; no executed cloud deployment claimed |
-| Data engineering and pipelines | ArcGIS pagination/retry, provenance manifest, schema capture, hashes, deterministic transformations | Code and tests executed; full remote data pull pending |
-| Technical assurance / QA / model evaluation | Data contract, rolling validation, persistence baseline, per-DMA gate, drift, source reconciliation, evidence register | Executed code/tests; live DMA metrics pending |
-| ODI / reactive prioritisation | Official APR common-performance-commitment triage and exposure concentration | Executed official data |
-| Utilities / water context | APR, EDM, Watsit and DMA night-flow public sources | Executed for first three; DMA source availability verified |
-| Asset management | DMA investigation workflow is asset/network-oriented, but no internal asset registry/work-order history is available | Partial; do not claim internal asset-management delivery |
-| Senior stakeholder communication / visualisation | Executive/result reports, SQL views and decision boundaries designed for operational review | Demonstrated project output; not evidence of Yorkshire Water stakeholder delivery |
-| Coaching / Agile delivery | Not demonstrated by this repository | Gap; use only separate real work experience if applicable |
+| Python / data science / ML | Reproducible Python pipelines, rolling-origin forecasting, baseline selection, uncertainty bands, bootstrap and temporal robustness | Strong |
+| SQL / operational data product | SQLite publication layer with stable decision, capacity, continuity, reconciliation and robustness views | Strong |
+| Translate data into action | Forecast outputs are converted into a candidate-only, capacity-constrained review queue with backlog and workload metrics | Strong |
+| Technical assurance / QA | Source pins, data contracts, source reconciliation, drift checks, champion/challenger gates, provenance hashes and evidence register | Strong |
+| Model performance evaluation | Aggregate, fold-level, DMA-level, block-bootstrap and calendar-quarter evaluation; simple model retained when ML failed the gate | Strong |
+| Data engineering / pipelines | Official-source retrieval, ArcGIS pagination, retry/backoff, schema checks, manifests, reproducible CLI and GitHub Actions | Strong |
+| Open data | APR, EDM, Watsit and ArcGIS public-data layers with explicit source boundaries | Strong |
+| Product ownership / prioritisation | Capacity frontier, queue continuity, evidence release gate and SQL product show end-to-end decision-product thinking | Strong portfolio evidence |
+| Water / wastewater domain | Uses water-utility performance, storm-overflow, resource and DMA night-flow data | Partial: public-data case study, not internal operational experience |
+| Asset management | DMA-level signals and operational prioritisation are relevant, but the public project has no asset register, failure history or work-order data | Partial |
+| Azure / Databricks | `docs/ARCHITECTURE.md` maps the current pipeline to a reference cloud design | Partial: architecture only; no executed cloud deployment claimed |
+| R | Not used in this repository | Gap in this project |
+| Agile delivery | Repository history shows iterative releases and automated validation, but it does not evidence work within an Agile team | Gap / use professional examples |
+| Coaching / supporting data scientists | Cannot be demonstrated by repository code | Gap / use professional examples |
+| Senior stakeholder communication | README, case study and explicit decision/claim boundaries demonstrate communication design, but real stakeholder influence must come from professional experience | Partial |
 
-## Why this project is useful for the application
+## Best interview linkage
 
-The strongest link to the role is not the gradient-boosting estimator. It is the combination of a defined operational decision, a cheap baseline, data/source QA, explicit model promotion, capacity limits, stable downstream outputs and clear claim boundaries. That structure matches a senior role where the data scientist is expected to own a Data/AI product rather than only train a model.
+The strongest story for this role is not “I trained an ML model.” It is: I defined a decision problem, built a reproducible public-data pipeline, used a pre-set promotion rule, kept the simpler champion when ML did not clear the bar, converted the champion into a capacity-aware operational queue, and then tested workload, continuity and time robustness.
+
+## Claims to avoid
+
+Do not present this as a Yorkshire Water internal system. Do not claim confirmed leak detection, asset failure prediction, field-team savings, optimal staffing, prevented incidents, recovered water, avoided ODI payments or executed Azure/Databricks production deployment.

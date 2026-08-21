@@ -1,26 +1,17 @@
-# CV bullets — v0.7 evidence rules
+# CV bullets — v1.0 verified evidence
 
-## Recommended Yorkshire Water / utility Senior Data Scientist version
+## Recommended three bullets
 
 **Water Utility Decision Intelligence | Python, ML, SQL, Decision Modelling**
 
-- Built a reproducible decision-support product over **121,937 rows of Yorkshire Water's official 2025/26 APR open data**, extracting 36 common performance-commitment rows and quantifying **£76.75m gross negative-payment exposure** within the parsed common-3A payment portfolio.
-- Validated **424,695 official DMA night-flow records across 345 DMAs** with four rolling-origin folds; HistGradientBoosting reduced MAE from **0.15931 to 0.15747 (1.15%)** and improved **83.8% of DMAs**, but a pre-set governance gate retained persistence because the gain was below 2% and the worst fold was **5.24% worse**.
-- Converted the frozen champion into a capacity-aware review product over **210,841 held-out observations**: at **20 DMA reviews/day**, the constrained anomaly queue selected **52.6% of candidate alerts while retaining 85.3% of positive residual-excess signal**, versus **38.9%** for highest-flow and **5.5%** for deterministic random selection.
-- Added operational assurance through source pinning, data contracts, drift checks, APR↔EDM reconciliation, queue-stability and DMA-concentration monitoring, and published compact outputs through a **SQLite decision layer** and evidence register.
+- Built a reproducible decision-support pipeline over **424,695 Yorkshire Water DMA night-flow records across 345 DMAs**, using four rolling-origin folds and **210,841 held-out predictions**; a pre-set governance gate retained persistence after HistGradientBoosting improved MAE by only **1.15%** and was **5.24% worse in the weakest fold**.
+- Converted the frozen champion into a capacity-aware review product: at **20 DMA reviews/day**, the candidate-constrained queue reviewed **52.6% of candidate alerts while retaining 85.3% of positive residual-excess signal**, versus **38.9%** for highest-flow selection; 7-day moving-block bootstrap placed the 95% capture interval at **82.4%–88.2%**.
+- Tested decision robustness rather than relying on a single average: the same frozen policy beat highest-flow in **8/8 calendar-quarter slices** while absolute capture ranged from **76.9% to 95.1%**; added capacity-return, queue-continuity, data-contract and provenance controls in a tested Python/SQLite product.
 
-For a one-page CV, use bullets 1–3. Add bullet 4 when the role stresses product ownership, governance or SQL/data-product delivery.
+## Optional regulatory/data-assurance bullet
 
-## Optional regulatory bullet
+- Parsed **121,937 rows** of official 2025/26 APR open data and quantified **£76.75m gross negative-payment exposure** within a narrow common-3A numeric-payment extract; reconciled APR and EDM spill totals and routed a **156-event (0.303%) 2025 source-version difference** to review rather than silently overwriting it.
 
-- Reconciled APR spill counts against Yorkshire Water's published EDM series, surfacing a **156-event (0.303%) 2025 source-version difference** for review rather than silently overwriting it; also built a rainfall/reservoir/demand operational-context layer.
+## Claim boundary
 
-## Evidence boundary
-
-The night-flow, decision-policy and v0.7 continuity figures above come from successful GitHub Actions runs against Yorkshire Water's public ArcGIS DMA data, with compact-output hashes verified by `live_validation_provenance.json`. "Positive residual-excess signal" is a model-residual proxy, not a verified leak label or recovered water volume. Do not claim detected leaks, avoided incidents, saved ODI penalties, an official drought classifier, or an executed Azure/Databricks deployment.
-
-## Optional v0.7 continuity bullet — verified live evidence
-
-- Tested candidate-only queue continuity at fixed daily capacity without changing the model or alert threshold; a **10% carry-over reserve increased consecutive-day queue Jaccard by 45.7% (0.0262→0.0381)** while reducing residual-signal capture by only **0.059 percentage points**, with wider 25% and 50% sensitivity points reported rather than selecting a post-hoc optimum.
-
-The v0.7 GitHub Actions live workflow reproduced the continuity figures and `nightflow_queue_continuity` is `available` in `EVIDENCE_REGISTER.csv`; continuity provenance is verified. Continuity applies only to DMAs that remain positive candidates on the current date, and no carry-over fraction is presented as optimal.
+“Positive residual-excess signal” is a model-residual proxy, not verified leak recall or recovered water. Do not claim detected leaks, avoided incidents, saved ODI penalties, optimal staffing, an official drought classification, or an executed Azure/Databricks deployment.

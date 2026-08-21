@@ -5,6 +5,8 @@ from pathlib import Path
 import ast
 import hashlib
 import json
+import platform
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
@@ -25,8 +27,12 @@ def count_tests() -> int:
         total += sum(isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name.startswith("test_") for n in ast.walk(tree))
     return total
 
+
+lock_path = ROOT / "requirements-lock.txt"
 key_paths = [
     ROOT / "README.md",
+    lock_path,
+    RESULTS / "environment_snapshot.txt",
     RESULTS / "apr_metrics.json",
     RESULTS / "edm_reconciliation_metrics.json",
     RESULTS / "watsit_resource_watch_summary.json",
@@ -43,6 +49,16 @@ evidence_summary = json.loads((RESULTS / "evidence_register_summary.json").read_
 manifest = {
     "version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
     "built_at_utc": datetime.now(timezone.utc).isoformat(),
+    "runtime": {
+        "python": platform.python_version(),
+        "implementation": platform.python_implementation(),
+        "platform": platform.platform(),
+    },
+    "dependency_lock": {
+        "path": "requirements-lock.txt",
+        "sha256": sha256(lock_path),
+        "bytes": lock_path.stat().st_size,
+    },
     "automated_test_functions": count_tests(),
     "live_nightflow_claims_ready": evidence_summary["live_nightflow_claims_ready"],
     "decision_value_claims_ready": evidence_summary.get("decision_value_claims_ready", False),
