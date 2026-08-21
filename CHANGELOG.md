@@ -1,11 +1,22 @@
 # Changelog
 
+## v0.7.0 — 2026-08-21
+
+- Added candidate-only queue-continuity sensitivity after the forecasting champion and anomaly threshold are frozen.
+- Continuity can prioritise only DMAs that remain current positive candidates; yesterday's queue can never retain a non-candidate.
+- Added 0%, 10%, 25% and 50% carry-over reserve scenarios at capacity 20 without selecting a post-hoc optimum.
+- GitHub real-data validation confirmed mean queue Jaccard rising from 0.0262 at 0% to 0.0381 / 0.0487 / 0.0505 while signal capture remains 85.24% / 85.07% / 84.99% at 10% / 25% / 50%.
+- Added continuity/capture cost, previous-queue retention, continuity slots used, backlog, capacity utilisation and DMA concentration outputs.
+- Added continuity metrics to live provenance and a separate fail-closed evidence item.
+- Added `v_nightflow_continuity_frontier` to the SQLite operational product.
+- Expanded the automated suite from 28 to **34 tests**.
+
 ## v0.6.0 — 2026-08-21
 
 - Added downstream capacity-aware DMA review evaluation after the forecasting champion is frozen.
 - Compared deterministic random, highest-flow, anomaly-score and capacity-constrained policies at daily capacities 5, 10, 20 and 40.
 - Added residual-signal capture, candidate precision/recall, backlog, capacity utilisation, workload scenario, queue Jaccard/retention and DMA concentration/HHI metrics.
-- On 210,841 held-out observations, capacity 20 retains 85.3% of positive residual-excess signal while reviewing 52.6% of candidate alerts; highest-flow retains 38.9% and deterministic random 5.5%.
+- GitHub real-data validation confirmed on 210,841 held-out observations that capacity 20 retains 85.3% of positive residual-excess signal while reviewing 52.6% of candidate alerts; highest-flow retains 38.9% and deterministic random 5.5%.
 - Added explicit queue-churn reporting: the constrained anomaly queue has mean consecutive-day Jaccard about 0.026, making field-team continuity a visible trade-off.
 - Vectorised daily policy ranking so the real-data decision simulation runs in seconds rather than repeated per-day sorting.
 - Added live-run provenance hashes so compact committed metrics remain traceable without storing the 424,695 raw ArcGIS records in Git.

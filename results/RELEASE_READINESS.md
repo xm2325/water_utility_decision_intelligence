@@ -1,14 +1,18 @@
-# Release readiness — v0.4
+# Release readiness — v0.7
 
-**Status: BLOCKED FOR LIVE NIGHT-FLOW CLAIMS**
+**Status: READY**
 
-This register separates executed official-data evidence from synthetic development validation.
+This register separates executed public-data evidence from synthetic development validation and unverified compact outputs.
 
-- Real evidence items available: **3**
-- Live night-flow claims ready: **False**
+- Real evidence items available: **6**
+- Live night-flow claims ready: **True**
+- Decision-value claims ready: **True**
+- Continuity claims ready: **True**
+- Live provenance verified: **True**
+- Continuity provenance verified: **True**
 
 ## Application boundary
 
-APR, source-reconciliation and Watsit resource-watch statistics are currently usable. Night-flow performance metrics remain blocked until a network-enabled real-data run produces raw ArcGIS files, provenance manifest and root-level backtest metrics.
+Executed public-data claims may cover APR portfolio statistics, source reconciliation, Watsit context, night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture, review-workload and candidate-only queue-continuity sensitivity metrics. Do not describe anomaly signals as confirmed leaks, call a continuity quota optimal, or convert signals into avoided incidents, recovered water, ODI recovery or financial return.
 
-`EVIDENCE_REGISTER.csv` records, for each output, what can and cannot be claimed externally. This prevents synthetic smoke-test metrics or unexecuted live-data designs from leaking into the CV or interview evidence.
+`EVIDENCE_REGISTER.csv` records what can and cannot be claimed externally. `live_validation_provenance.json` binds compact live metrics to an executed run without committing the large raw ArcGIS tables or held-out prediction file to Git.

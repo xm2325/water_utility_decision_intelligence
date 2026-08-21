@@ -1,0 +1,38 @@
+{
+  "generated_at_utc": "2026-08-21T16:33:12.895364+00:00",
+  "files": {
+    "nightflow_backtest_metrics.json": {
+      "sha256": "d70f52835cb07b8f1cefdac4c5356a29505633539a73c1b192552f2ed1cbe7b2",
+      "bytes": 5281
+    },
+    "nightflow_promotion_decision.json": {
+      "sha256": "f5d621b45e7dcd6a5bc44170f38276db43a4966c2b2989834f963f1abcd337d4",
+      "bytes": 2232
+    },
+    "nightflow_policy_capacity_summary.csv": {
+      "sha256": "1d50bf06c79d7ecdddfc0cb48879855e755a009034d70095b20ba3685e6df231",
+      "bytes": 5360
+    },
+    "nightflow_policy_queue_stability.csv": {
+      "sha256": "21f509ae85c2145f3b420eaefd0cf7a5f29fb046c8de5efcc84dab33e2b032d4",
+      "bytes": 1383
+    },
+    "nightflow_policy_dma_concentration.csv": {
+      "sha256": "0fb3648b2ddad657857b1253ba2abe2854c2d7f9ff4c2d6ab7d7f6b3dd395641",
+      "bytes": 1352
+    },
+    "nightflow_decision_value_metrics.json": {
+      "sha256": "d56997ea225911fb51b71639fdda585f91069570810eec011148a500f7b8fd6b",
+      "bytes": 4662
+    },
+    "nightflow_continuity_sensitivity.csv": {
+      "sha256": "b067fe5c0d009dc417bcbbd9e41dcfba1fa97deec922c0cf052c6cd1f224a4aa",
+      "bytes": 1534
+    },
+    "nightflow_continuity_metrics.json": {
+      "sha256": "eb0997046726198e9683c0975ec784156ec7e569c9d0bc03f8e828728d87b6e3",
+      "bytes": 3932
+    }
+  },
+  "interpretation": "Hashes bind compact live outputs to one executed run; raw ArcGIS records remain workflow artifacts rather than Git-tracked evidence."
+}

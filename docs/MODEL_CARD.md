@@ -1,4 +1,4 @@
-# Model card — DMA night-flow investigation model v0.6
+# Model card — DMA night-flow investigation model v0.7
 
 ## Intended decision
 
@@ -94,3 +94,11 @@ Only upper-band exceedances can enter the latest queue. Field-team capacity is a
 After the forecasting champion is frozen, the project evaluates how a finite daily review budget changes which DMA signals are surfaced. Four comparison policies are reported: deterministic random, highest observed flow, anomaly-score ranking, and a capacity-constrained anomaly queue that admits only positive upper-band candidates.
 
 The decision-value target is **positive residual-excess signal capture** from the deployed champion. It is not a verified leak outcome. Queue Jaccard/retention, backlog, capacity utilisation, a transparent analyst-hours scenario and DMA selection concentration are reported alongside signal capture so a high-capture but unstable queue is not presented as unconditionally better.
+
+## v0.7 queue-continuity sensitivity
+
+The v0.6 capacity-constrained queue has strong residual-signal capture but low consecutive-day overlap. v0.7 therefore evaluates bounded continuity reserves while keeping the forecasting champion, uncertainty band, candidate definition and daily capacity fixed.
+
+A DMA can receive continuity priority only if it is still a positive upper-band candidate on the current date. A previous queue membership cannot keep a non-candidate active. The reserve is a maximum: unused continuity slots return immediately to current anomaly-score ranking.
+
+Carry-over fractions 0%, 10%, 25% and 50% are reported as a sensitivity frontier. They are not tuned on held-out outcomes and no fraction is called optimal. Reported metrics include residual-signal capture, capture cost versus zero carry-over, consecutive-day Jaccard, previous-queue retention, continuity slots used, backlog and DMA concentration. The v0.7 GitHub real-data workflow reproduced the frontier and verified its compact-output provenance.

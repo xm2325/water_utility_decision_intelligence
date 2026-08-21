@@ -1,12 +1,12 @@
-# Water Utility Decision Intelligence — v0.6
+# Water Utility Decision Intelligence — v0.7
 
 **Independent portfolio project using publicly available Yorkshire Water data; not affiliated with or endorsed by Yorkshire Water.**
 
 Application project for a Senior Data Scientist role in a regulated utility. The repository treats modelling as one part of an operational Data/AI product: source provenance, source reconciliation, data contracts, time-aware validation, baseline selection, champion/challenger rules, capacity-aware review, SQL publication and evidence controls are explicit.
 
-## v0.6 in one view
+## v0.7 in one view
 
-v0.6 adds a downstream **decision-value layer** after the forecasting champion is frozen. The question is no longer only whether ML predicts better; it is also whether a finite daily review budget is allocated to the most informative DMA signals.
+v0.7 keeps the verified v0.6 decision-value layer and adds a **candidate-only queue-continuity sensitivity**. The forecasting champion, candidate threshold and capacity rule remain frozen; continuity can only prioritise a DMA if it is still a positive candidate on the current date.
 
 The decision layer compares four rules at capacities 5, 10, 20 and 40:
 
@@ -30,9 +30,9 @@ Data-contract checks passed. HistGradientBoosting achieved MAE **0.15747** versu
 
 All four calibration blocks selected **persistence** over the 7-day seasonal and trailing-28-day median comparators. The operational champion therefore remains persistence rather than forcing ML into production.
 
-### Capacity-aware review policy — pre-release replay
+### Capacity-aware review policy — verified live evidence
 
-The numbers below are a deterministic local replay over the already verified v0.5 GitHub Actions artifact. They are **not yet released as v0.6 application evidence**; the v0.6 network workflow must reproduce them and bind the compact outputs to provenance hashes first.
+The v0.6 GitHub Actions network workflow reproduced these figures from the public ArcGIS source and the evidence register verified the compact-output hashes.
 
 Across the **615 held-out dates**, the champion produced **23,120 positive upper-band candidates**: **10.97%** of held-out observations, with a mean **37.6 candidates/day**.
 
@@ -45,9 +45,38 @@ At daily capacity **20**:
 | anomaly_score | 85.3% | 98.9% | 52.6% | 0.029 |
 | capacity_constrained | **85.3%** | **100.0%** | **52.6%** | 0.026 |
 
-The constrained anomaly queue reviews only about half of candidate alerts while retaining 85.3% of the observed positive residual-excess signal. The same result also exposes a limitation: the anomaly queue changes sharply from day to day. A production workflow may therefore need queue hysteresis or continuity constraints for field teams.
+At capacity 20, the constrained anomaly queue reviews 52.6% of candidate alerts while retaining 85.3% of the observed positive residual-excess signal. The same result also exposes a limitation: the anomaly queue changes sharply from day to day. A production workflow may therefore need queue hysteresis or continuity constraints for field teams.
 
 The default workload scenario assumes 20 minutes per selected DMA only to make policies comparable. It is not a Yorkshire Water staffing estimate.
+
+### v0.7 queue-continuity sensitivity — verified live evidence
+
+The v0.6 result exposes a practical issue: high residual-signal capture comes with a rapidly changing daily queue. v0.7 tests bounded continuity reserves of 0%, 10%, 25% and 50% at capacity 20. A DMA can receive continuity priority **only when it is still a positive upper-band candidate today**; yesterday's queue alone can never keep a DMA active.
+
+The v0.7 GitHub Actions network workflow reproduced the following sensitivity over the same **210,841 held-out predictions**:
+
+| Carry-over reserve | Signal capture | Capture cost vs 0% | Mean queue Jaccard | Previous-queue retention |
+|---:|---:|---:|---:|---:|
+| 0% | 85.30% | 0.000 pp | 0.0262 | 5.01% |
+| 10% | 85.24% | 0.059 pp | 0.0381 | 7.27% |
+| 25% | 85.07% | 0.236 pp | 0.0487 | 9.08% |
+| 50% | 84.99% | 0.311 pp | 0.0505 | 9.34% |
+
+The 10–50% settings are **sensitivity points, not tuned recommendations**. The v0.7 live provenance check passed, so these figures are available as continuity evidence; no carry-over fraction is described as optimal.
+
+### Capacity frontier
+
+For the capacity-constrained policy, signal capture rises with review capacity but with diminishing marginal gain:
+
+| Daily capacity | Signal capture | Candidate recall | Mean backlog/day | Mean selected/day |
+|---:|---:|---:|---:|---:|
+| 5 | 51.8% | 13.3% | 32.6 | 5.0 |
+| 10 | 68.7% | 26.6% | 27.6 | 10.0 |
+| 20 | 85.3% | 52.6% | 17.8 | 19.8 |
+| 40 | 96.8% | 88.2% | 4.4 | 33.1 |
+
+This is a decision frontier, not a recommendation that capacity should be 20 or 40. Actual staffing cost and operational value are not present in the public data.
+
 
 ## Regulatory and operational context
 
@@ -99,6 +128,7 @@ Yorkshire Water ArcGIS annual DMA tables
     -> aggregate + per-DMA champion/challenger gate
     -> frozen champion
     -> four review policies x capacity sensitivity
+    -> candidate-only queue-continuity sensitivity
     -> workload + signal capture + queue stability + DMA concentration
     -> SQLite operational product + evidence register
 ```
@@ -131,7 +161,8 @@ This creates `results/operational_decision_product.sqlite`. Views include:
 - `v_latest_resource_watch`;
 - `v_current_dma_investigation_queue` after a live run;
 - `v_nightflow_capacity_tradeoff`;
-- `v_nightflow_policy_capacity20`.
+- `v_nightflow_policy_capacity20`;
+- `v_nightflow_continuity_frontier`.
 
 Example queries are in `sql/operational_queries.sql`.
 
@@ -143,7 +174,8 @@ The live evidence boundary allows claims about:
 
 - observed forecast error and promotion decisions;
 - residual-signal capture under stated capacity rules;
-- candidate review burden, queue stability and DMA concentration.
+- candidate review burden, queue stability and DMA concentration;
+- candidate-only continuity sensitivity when compact hashes match the live-run provenance.
 
 It blocks claims about confirmed leak detection, avoided leakage, prevented incidents, ODI recovery or financial return.
 
@@ -166,7 +198,7 @@ make live
 
 ## Tests
 
-v0.6 has **28 automated tests** covering source pins, ArcGIS pagination, time semantics, data contracts, baseline selection, champion routing, decision-policy capacity rules, deterministic random benchmarking, evidence hashes, SQL views and source reconciliation.
+v0.7 has **34 automated tests** covering source pins, ArcGIS pagination, time semantics, data contracts, baseline selection, champion routing, decision-policy capacity rules, deterministic random benchmarking, candidate-only continuity, fail-closed continuity provenance, SQL views and source reconciliation.
 
 ## Cloud design boundary
 
