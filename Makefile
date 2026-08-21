@@ -1,4 +1,4 @@
-.PHONY: bootstrap verify-sources test apr edm resource smoke live decision frontier robustness continuity product evidence provenance release all
+.PHONY: bootstrap verify-sources test apr edm resource smoke live decision frontier robustness temporal continuity product evidence provenance release all
 
 bootstrap:
 	python scripts/download_apr.py
@@ -30,6 +30,9 @@ frontier:
 robustness:
 	python scripts/run_policy_robustness.py
 
+temporal:
+	python scripts/run_temporal_robustness.py
+
 continuity:
 	python scripts/run_continuity_sensitivity.py
 
@@ -42,6 +45,7 @@ live:
 	python scripts/run_decision_value.py
 	python scripts/run_capacity_frontier.py
 	python scripts/run_policy_robustness.py
+	python scripts/run_temporal_robustness.py
 	python scripts/run_continuity_sensitivity.py
 	python scripts/build_live_provenance.py
 	python scripts/build_operational_store.py

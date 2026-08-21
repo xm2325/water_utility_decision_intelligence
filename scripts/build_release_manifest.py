@@ -35,6 +35,7 @@ key_paths = [
     RESULTS / "nightflow_decision_value_metrics.json",
     RESULTS / "nightflow_capacity_frontier_metrics.json",
     RESULTS / "nightflow_policy_bootstrap_metrics.json",
+    RESULTS / "nightflow_temporal_robustness_metrics.json",
     RESULTS / "nightflow_continuity_metrics.json",
     RESULTS / "live_validation_provenance.json",
 ]
@@ -47,10 +48,12 @@ manifest = {
     "decision_value_claims_ready": evidence_summary.get("decision_value_claims_ready", False),
     "capacity_frontier_claims_ready": evidence_summary.get("capacity_frontier_claims_ready", False),
     "policy_robustness_claims_ready": evidence_summary.get("policy_robustness_claims_ready", False),
+    "temporal_robustness_claims_ready": evidence_summary.get("temporal_robustness_claims_ready", False),
     "continuity_claims_ready": evidence_summary.get("continuity_claims_ready", False),
     "live_provenance_verified": evidence_summary.get("live_provenance_verified", False),
     "capacity_frontier_provenance_verified": evidence_summary.get("capacity_frontier_provenance_verified", False),
     "policy_robustness_provenance_verified": evidence_summary.get("policy_robustness_provenance_verified", False),
+    "temporal_robustness_provenance_verified": evidence_summary.get("temporal_robustness_provenance_verified", False),
     "continuity_provenance_verified": evidence_summary.get("continuity_provenance_verified", False),
     "artifacts": [
         {

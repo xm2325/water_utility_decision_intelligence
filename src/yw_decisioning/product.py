@@ -25,6 +25,8 @@ RESULT_TABLES = {
     "nightflow_capacity_frontier.csv": "nightflow_capacity_frontier",
     "nightflow_policy_bootstrap_summary.csv": "nightflow_policy_bootstrap_summary",
     "nightflow_policy_bootstrap_comparisons.csv": "nightflow_policy_bootstrap_comparisons",
+    "nightflow_policy_quarterly_summary.csv": "nightflow_policy_quarterly_summary",
+    "nightflow_policy_quarterly_comparisons.csv": "nightflow_policy_quarterly_comparisons",
 }
 
 
@@ -145,6 +147,17 @@ def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dic
                        block_length_days, bootstrap_replicates, held_out_dates
                 FROM nightflow_policy_bootstrap_summary
                 ORDER BY point_signal_capture DESC
+                """
+            )
+
+        if "nightflow_policy_quarterly_summary" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_temporal_robustness AS
+                SELECT quarter, policy, observed_days, signal_capture,
+                       mean_selected_per_day, mean_candidates_per_day, candidate_recall
+                FROM nightflow_policy_quarterly_summary
+                ORDER BY quarter, signal_capture DESC
                 """
             )
 

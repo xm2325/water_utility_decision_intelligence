@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import pandas as pd
 
-from .live_provenance import CAPACITY_FRONTIER_FILES, CONTINUITY_FILES, DECISION_FILES, ROBUSTNESS_FILES, verify_live_provenance
+from .live_provenance import CAPACITY_FRONTIER_FILES, CONTINUITY_FILES, DECISION_FILES, ROBUSTNESS_FILES, TEMPORAL_ROBUSTNESS_FILES, verify_live_provenance
 
 
 def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
@@ -100,6 +100,24 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "prohibited_claim": "verified leak confidence interval, causal significance, future guarantee, avoided leakage, ROI or financial return",
     })
 
+    temporal_metrics = results / "nightflow_temporal_robustness_metrics.json"
+    temporal_required = (
+        "nightflow_decision_value_metrics.json",
+        "nightflow_policy_daily_metrics.csv",
+        *TEMPORAL_ROBUSTNESS_FILES,
+    )
+    temporal_provenance_ok, temporal_provenance_detail = verify_live_provenance(root, required=temporal_required)
+    has_temporal = has_live and temporal_metrics.exists() and temporal_provenance_ok
+    rows.append({
+        "evidence_id": "nightflow_temporal_robustness",
+        "evidence_type": "executed_real_data" if has_temporal else ("not_yet_executed" if not temporal_metrics.exists() else "unverified_live_output"),
+        "status": "available" if has_temporal else "blocked_pending_verified_live_run",
+        "source": "Held-out daily decision-policy metrics from Yorkshire Water DMA night-flow predictions",
+        "artifact": "results/nightflow_temporal_robustness_metrics.json" if has_temporal else "",
+        "allowed_claim": "calendar-quarter heterogeneity of frozen-policy residual-signal capture and comparator gaps" if has_temporal else "temporal-slice design only",
+        "prohibited_claim": "quarter-specific tuning, future guarantee, verified leak recall, causal effect or financial return",
+    })
+
     continuity_metrics = results / "nightflow_continuity_metrics.json"
     continuity_required = (
         "nightflow_backtest_metrics.json",
@@ -136,6 +154,7 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "decision_value_claims_ready": bool(has_decision),
         "capacity_frontier_claims_ready": bool(has_frontier),
         "policy_robustness_claims_ready": bool(has_robustness),
+        "temporal_robustness_claims_ready": bool(has_temporal),
         "continuity_claims_ready": bool(has_continuity),
         "live_provenance_verified": bool(provenance_ok),
         "live_provenance_detail": provenance_detail,
@@ -143,11 +162,13 @@ def build_evidence_register(root: str | Path) -> tuple[pd.DataFrame, dict]:
         "capacity_frontier_provenance_detail": frontier_provenance_detail,
         "policy_robustness_provenance_verified": bool(robustness_provenance_ok),
         "policy_robustness_provenance_detail": robustness_provenance_detail,
+        "temporal_robustness_provenance_verified": bool(temporal_provenance_ok),
+        "temporal_robustness_provenance_detail": temporal_provenance_detail,
         "continuity_provenance_verified": bool(continuity_provenance_ok),
         "continuity_provenance_detail": continuity_provenance_detail,
         "application_claim_boundary": (
             "Executed public-data claims may cover APR portfolio statistics, source reconciliation, Watsit context, "
-            "night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture, review-workload, marginal capacity-frontier and candidate-only queue-continuity sensitivity metrics. "
+            "night-flow backtest/governance metrics and, when provenance verifies, residual-signal capture, review-workload, marginal capacity-frontier, moving-block robustness, calendar-quarter heterogeneity and candidate-only queue-continuity sensitivity metrics. "
             "Do not describe anomaly signals as confirmed leaks, call a capacity or continuity setting optimal, or convert signals into avoided incidents, recovered water, ODI recovery or financial return."
         ),
     }
@@ -167,9 +188,10 @@ def save_evidence_register(root: str | Path) -> dict:
         and (not (out / "nightflow_decision_value_metrics.json").exists() or summary["decision_value_claims_ready"])
         and (not (out / "nightflow_capacity_frontier_metrics.json").exists() or summary["capacity_frontier_claims_ready"])
         and (not (out / "nightflow_policy_bootstrap_metrics.json").exists() or summary["policy_robustness_claims_ready"])
+        and (not (out / "nightflow_temporal_robustness_metrics.json").exists() or summary["temporal_robustness_claims_ready"])
         and (not (out / "nightflow_continuity_metrics.json").exists() or summary["continuity_claims_ready"])
     ) else "BLOCKED FOR UNVERIFIED LIVE CLAIMS"
-    report = f"""# Release readiness — v0.9
+    report = f"""# Release readiness — v0.10
 
 **Status: {status}**
 
@@ -180,10 +202,12 @@ This register separates executed public-data evidence from synthetic development
 - Decision-value claims ready: **{summary['decision_value_claims_ready']}**
 - Capacity-frontier claims ready: **{summary['capacity_frontier_claims_ready']}**
 - Policy-robustness claims ready: **{summary['policy_robustness_claims_ready']}**
+- Temporal-robustness claims ready: **{summary['temporal_robustness_claims_ready']}**
 - Continuity claims ready: **{summary['continuity_claims_ready']}**
 - Live provenance verified: **{summary['live_provenance_verified']}**
 - Capacity-frontier provenance verified: **{summary['capacity_frontier_provenance_verified']}**
 - Policy-robustness provenance verified: **{summary['policy_robustness_provenance_verified']}**
+- Temporal-robustness provenance verified: **{summary['temporal_robustness_provenance_verified']}**
 - Continuity provenance verified: **{summary['continuity_provenance_verified']}**
 
 ## Application boundary
