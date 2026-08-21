@@ -1,0 +1,35 @@
+name: materialize-v0.4
+
+on:
+  push:
+    branches: [upgrade/v0.4-live-data]
+    paths:
+      - project.tar.gz
+      - .github/workflows/materialize-v0.4.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Expand reviewed v0.4 project payload
+        run: |
+          tar -xzf project.tar.gz
+          rm -f project.tar.gz .github/workflows/materialize-v0.4.yml
+
+      - name: Commit materialized project tree
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            .github/workflows/ci.yml \
+            .github/workflows/real-data.yml \
+            .github/workflows/materialize-v0.4.yml \
+            .gitignore CHANGELOG.md CV_BULLETS.md Makefile README.md VERSION requirements.txt \
+            config data docs scripts sql src tests results project.tar.gz
+          git commit -m "feat: publish v0.4 operational decision intelligence"
+          git push origin HEAD:upgrade/v0.4-live-data
