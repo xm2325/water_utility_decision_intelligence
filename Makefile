@@ -1,10 +1,10 @@
-.PHONY: bootstrap verify-sources test apr edm resource smoke live product evidence release all
+.PHONY: bootstrap verify-sources test apr edm resource smoke live decision product evidence provenance release all
 
 bootstrap:
 	python scripts/download_apr.py
 
 verify-sources:
-	PYTHONPATH=src python -c "from pathlib import Path; from yw_decisioning.source_pins import load_source_pins, validate_file_against_pin; p=load_source_pins('config/source_pins.json'); r={k:validate_file_against_pin(v['path'], v) for k,v in p['sources'].items()}; print(r); assert all(x['ok'] for x in r.values())"
+	PYTHONPATH=src python -c "from yw_decisioning.source_pins import load_source_pins, validate_file_against_pin; p=load_source_pins('config/source_pins.json'); r={k:validate_file_against_pin(v['path'], v) for k,v in p['sources'].items()}; print(r); assert all(x['ok'] for x in r.values())"
 
 test:
 	pytest -q
@@ -21,11 +21,20 @@ resource:
 smoke:
 	python scripts/run_synthetic_smoke.py
 
+decision:
+	python scripts/run_decision_value.py
+
+provenance:
+	python scripts/build_live_provenance.py
+
 live:
 	python scripts/download_arcgis.py night_flow_2023 night_flow_2024 night_flow_2025 night_flow_2026 reservoir_2026 dwq_2026
-	python scripts/run_nightflow_model.py
+	python scripts/run_nightflow_model.py --splits 4 --capacity 20
+	python scripts/run_decision_value.py
+	python scripts/build_live_provenance.py
 	python scripts/build_operational_store.py
 	python scripts/build_evidence_register.py
+	python scripts/build_release_manifest.py
 
 product:
 	python scripts/build_operational_store.py

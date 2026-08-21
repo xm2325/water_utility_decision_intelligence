@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.0 — 2026-08-21
+
+- Added downstream capacity-aware DMA review evaluation after the forecasting champion is frozen.
+- Compared deterministic random, highest-flow, anomaly-score and capacity-constrained policies at daily capacities 5, 10, 20 and 40.
+- Added residual-signal capture, candidate precision/recall, backlog, capacity utilisation, workload scenario, queue Jaccard/retention and DMA concentration/HHI metrics.
+- On 210,841 held-out observations, capacity 20 retains 85.3% of positive residual-excess signal while reviewing 52.6% of candidate alerts; highest-flow retains 38.9% and deterministic random 5.5%.
+- Added explicit queue-churn reporting: the constrained anomaly queue has mean consecutive-day Jaccard about 0.026, making field-team continuity a visible trade-off.
+- Vectorised daily policy ranking so the real-data decision simulation runs in seconds rather than repeated per-day sorting.
+- Added live-run provenance hashes so compact committed metrics remain traceable without storing the 424,695 raw ArcGIS records in Git.
+- Added SQLite views for capacity trade-offs and the capacity-20 policy comparison.
+- Expanded the automated suite from 21 to **28 tests**.
+
 ## v0.5.0 — 2026-08-21
 
 - Replaced the single fixed persistence comparator with a leakage-safe simple-baseline set: persistence, 7-day seasonal and trailing-28-day median.

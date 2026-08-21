@@ -32,12 +32,17 @@ key_paths = [
     RESULTS / "watsit_resource_watch_summary.json",
     RESULTS / "EVIDENCE_REGISTER.csv",
     RESULTS / "operational_decision_product.sqlite",
+    RESULTS / "nightflow_decision_value_metrics.json",
+    RESULTS / "live_validation_provenance.json",
 ]
+evidence_summary = json.loads((RESULTS / "evidence_register_summary.json").read_text())
 manifest = {
     "version": (ROOT / "VERSION").read_text(encoding="utf-8").strip(),
     "built_at_utc": datetime.now(timezone.utc).isoformat(),
     "automated_test_functions": count_tests(),
-    "live_nightflow_claims_ready": json.loads((RESULTS / "evidence_register_summary.json").read_text())["live_nightflow_claims_ready"],
+    "live_nightflow_claims_ready": evidence_summary["live_nightflow_claims_ready"],
+    "decision_value_claims_ready": evidence_summary.get("decision_value_claims_ready", False),
+    "live_provenance_verified": evidence_summary.get("live_provenance_verified", False),
     "artifacts": [
         {
             "path": str(p.relative_to(ROOT)),

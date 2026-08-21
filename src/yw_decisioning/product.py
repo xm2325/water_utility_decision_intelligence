@@ -18,6 +18,9 @@ RESULT_TABLES = {
     "nightflow_dma_performance.csv": "nightflow_dma_performance",
     "edm_apr_reconciliation.csv": "edm_apr_reconciliation",
     "watsit_resource_watch_2026.csv": "watsit_resource_watch_2026",
+    "nightflow_policy_capacity_summary.csv": "nightflow_policy_capacity_summary",
+    "nightflow_policy_queue_stability.csv": "nightflow_policy_queue_stability",
+    "nightflow_policy_dma_concentration.csv": "nightflow_policy_dma_concentration",
 }
 
 
@@ -92,6 +95,27 @@ def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dic
                 FROM edm_apr_reconciliation
                 WHERE review_status <> 'matched'
                 ORDER BY calendar_year DESC
+                """
+            )
+
+        if "nightflow_policy_capacity_summary" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_capacity_tradeoff AS
+                SELECT policy, capacity, signal_capture, candidate_precision, candidate_recall,
+                       mean_backlog_candidates, capacity_utilisation, analyst_hours_per_day,
+                       mean_consecutive_day_jaccard, mean_previous_queue_retention, selection_hhi
+                FROM nightflow_policy_capacity_summary
+                ORDER BY capacity, policy
+                """
+            )
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_policy_capacity20 AS
+                SELECT *
+                FROM nightflow_policy_capacity_summary
+                WHERE capacity = 20
+                ORDER BY signal_capture DESC, candidate_precision DESC
                 """
             )
 

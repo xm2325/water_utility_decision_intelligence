@@ -52,3 +52,14 @@ SELECT month, year,
        demand_ml_day, demand_hist_median_ml_day, demand_vs_hist_median_pct,
        active_watch_signals
 FROM v_latest_resource_watch;
+
+-- v0.6: compare review policies at the default daily capacity.
+SELECT policy, signal_capture, candidate_precision, candidate_recall,
+       mean_backlog_candidates, capacity_utilisation,
+       mean_consecutive_day_jaccard, selection_hhi
+FROM v_nightflow_policy_capacity20;
+
+-- v0.6: inspect signal-capture / workload / continuity trade-offs by capacity.
+SELECT *
+FROM v_nightflow_capacity_tradeoff
+ORDER BY capacity, signal_capture DESC;

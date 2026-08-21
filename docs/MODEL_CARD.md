@@ -1,4 +1,4 @@
-# Model card — DMA night-flow investigation model v0.5
+# Model card — DMA night-flow investigation model v0.6
 
 ## Intended decision
 
@@ -88,3 +88,9 @@ Only upper-band exceedances can enter the latest queue. Field-team capacity is a
 - DMA definition changes and sensor maintenance can create distribution shifts.
 - The investigation score is not a failure probability.
 - A flagged DMA needs operational review before field action.
+
+## v0.6 downstream review policy
+
+After the forecasting champion is frozen, the project evaluates how a finite daily review budget changes which DMA signals are surfaced. Four comparison policies are reported: deterministic random, highest observed flow, anomaly-score ranking, and a capacity-constrained anomaly queue that admits only positive upper-band candidates.
+
+The decision-value target is **positive residual-excess signal capture** from the deployed champion. It is not a verified leak outcome. Queue Jaccard/retention, backlog, capacity utilisation, a transparent analyst-hours scenario and DMA selection concentration are reported alongside signal capture so a high-capture but unstable queue is not presented as unconditionally better.
