@@ -6,7 +6,7 @@ A reproducible decision-support case study for a Senior Data Scientist role in a
 
 ## Verified results at a glance
 
-All figures below were reproduced by GitHub Actions on 21 August 2026 from the public-data pipeline. Compact outputs are tied to the live run by SHA-256 hashes; large raw ArcGIS tables remain workflow artifacts rather than Git-tracked files.
+All figures below were reproduced by GitHub Actions on 21 August 2026 from the public-data pipeline. Compact outputs are tied to the live run by SHA-256 hashes; large raw ArcGIS tables remain workflow artifacts rather than Git-tracked files. The exact v1.0 workflow run, artifact digest and headline metrics are recorded in `results/VERIFIED_RELEASE_SNAPSHOT.md`.
 
 | Layer | Verified result |
 |---|---|
@@ -87,6 +87,7 @@ The repository includes a reference Azure/Databricks architecture in `docs/ARCHI
 
 ## Application material
 
+- `results/VERIFIED_RELEASE_SNAPSHOT.md` — compact GitHub-run evidence snapshot
 - `docs/CASE_STUDY.md` — short interview walkthrough
 - `docs/JD_TRACEABILITY.md` — evidence-to-role mapping and remaining gaps
 - `CV_BULLETS.md` — concise application bullets with verified figures
