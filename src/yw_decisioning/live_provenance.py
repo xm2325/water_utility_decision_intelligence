@@ -19,12 +19,19 @@ CAPACITY_FRONTIER_FILES = (
     "nightflow_capacity_frontier_metrics.json",
 )
 
+ROBUSTNESS_FILES = (
+    "nightflow_policy_daily_metrics.csv",
+    "nightflow_policy_bootstrap_summary.csv",
+    "nightflow_policy_bootstrap_comparisons.csv",
+    "nightflow_policy_bootstrap_metrics.json",
+)
+
 CONTINUITY_FILES = (
     "nightflow_continuity_sensitivity.csv",
     "nightflow_continuity_metrics.json",
 )
 
-LIVE_FILES = DECISION_FILES + CAPACITY_FRONTIER_FILES + CONTINUITY_FILES
+LIVE_FILES = DECISION_FILES + CAPACITY_FRONTIER_FILES + ROBUSTNESS_FILES + CONTINUITY_FILES
 
 
 def sha256_file(path: str | Path) -> str:

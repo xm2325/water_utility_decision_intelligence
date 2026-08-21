@@ -1,4 +1,4 @@
-.PHONY: bootstrap verify-sources test apr edm resource smoke live decision frontier continuity product evidence provenance release all
+.PHONY: bootstrap verify-sources test apr edm resource smoke live decision frontier robustness continuity product evidence provenance release all
 
 bootstrap:
 	python scripts/download_apr.py
@@ -27,6 +27,9 @@ decision:
 frontier:
 	python scripts/run_capacity_frontier.py
 
+robustness:
+	python scripts/run_policy_robustness.py
+
 continuity:
 	python scripts/run_continuity_sensitivity.py
 
@@ -38,6 +41,7 @@ live:
 	python scripts/run_nightflow_model.py --splits 4 --capacity 20
 	python scripts/run_decision_value.py
 	python scripts/run_capacity_frontier.py
+	python scripts/run_policy_robustness.py
 	python scripts/run_continuity_sensitivity.py
 	python scripts/build_live_provenance.py
 	python scripts/build_operational_store.py

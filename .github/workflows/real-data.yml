@@ -57,6 +57,9 @@ jobs:
       - name: Build marginal capacity / residual-signal frontier
         run: python scripts/run_capacity_frontier.py --policy capacity_constrained
 
+      - name: Run moving-block bootstrap policy robustness
+        run: python scripts/run_policy_robustness.py --capacity 20 --block-lengths 3,7,14 --bootstrap 1000 --seed 20260821
+
       - name: Evaluate candidate-only queue continuity sensitivity
         run: python scripts/run_continuity_sensitivity.py --capacity 20 --fractions 0,0.10,0.25,0.50 --minutes-per-review 20
 

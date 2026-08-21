@@ -23,6 +23,8 @@ RESULT_TABLES = {
     "nightflow_policy_dma_concentration.csv": "nightflow_policy_dma_concentration",
     "nightflow_continuity_sensitivity.csv": "nightflow_continuity_sensitivity",
     "nightflow_capacity_frontier.csv": "nightflow_capacity_frontier",
+    "nightflow_policy_bootstrap_summary.csv": "nightflow_policy_bootstrap_summary",
+    "nightflow_policy_bootstrap_comparisons.csv": "nightflow_policy_bootstrap_comparisons",
 }
 
 
@@ -45,64 +47,85 @@ def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dic
             df.to_sql(table, con, if_exists="replace", index=False)
             loaded[table] = int(len(df))
 
-        meta = pd.DataFrame([{
-            "built_at_utc": datetime.now(timezone.utc).isoformat(),
-            "source_results_dir": str(results_dir.resolve()),
-            "tables_loaded": len(loaded),
-        }])
+        meta = pd.DataFrame(
+            [
+                {
+                    "built_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "source_results_dir": str(results_dir.resolve()),
+                    "tables_loaded": len(loaded),
+                }
+            ]
+        )
         meta.to_sql("product_metadata", con, if_exists="replace", index=False)
 
         if "apr_common_pc_portfolio" in loaded:
-            con.execute("""
+            con.execute(
+                """
                 CREATE VIEW v_apr_negative_payment_priority AS
                 SELECT rag_reference, line_description, pcl_met, payment_m,
                        underperformance_exposure_m, exposure_share
                 FROM apr_common_pc_portfolio
                 WHERE underperformance_exposure_m > 0
                 ORDER BY underperformance_exposure_m DESC
-            """)
+                """
+            )
 
         if "nightflow_latest_priorities" in loaded:
-            con.execute("""
+            con.execute(
+                """
                 CREATE VIEW v_current_dma_investigation_queue AS
-                SELECT * FROM nightflow_latest_priorities
+                SELECT *
+                FROM nightflow_latest_priorities
                 WHERE within_capacity IN (1, 'True', 'true')
                 ORDER BY priority_rank
-            """)
+                """
+            )
 
         if "watsit_resource_watch_2026" in loaded:
-            con.execute("""
+            con.execute(
+                """
                 CREATE VIEW v_latest_resource_watch AS
-                SELECT * FROM watsit_resource_watch_2026
+                SELECT *
+                FROM watsit_resource_watch_2026
                 WHERE month_num = (SELECT MAX(month_num) FROM watsit_resource_watch_2026)
-            """)
+                """
+            )
 
         if "edm_apr_reconciliation" in loaded:
-            con.execute("""
+            con.execute(
+                """
                 CREATE VIEW v_source_reconciliation_review AS
-                SELECT * FROM edm_apr_reconciliation
+                SELECT *
+                FROM edm_apr_reconciliation
                 WHERE review_status <> 'matched'
                 ORDER BY calendar_year DESC
-            """)
+                """
+            )
 
         if "nightflow_policy_capacity_summary" in loaded:
-            con.execute("""
+            con.execute(
+                """
                 CREATE VIEW v_nightflow_capacity_tradeoff AS
                 SELECT policy, capacity, signal_capture, candidate_precision, candidate_recall,
                        mean_backlog_candidates, capacity_utilisation, analyst_hours_per_day,
                        mean_consecutive_day_jaccard, mean_previous_queue_retention, selection_hhi
                 FROM nightflow_policy_capacity_summary
                 ORDER BY capacity, policy
-            """)
-            con.execute("""
+                """
+            )
+            con.execute(
+                """
                 CREATE VIEW v_nightflow_policy_capacity20 AS
-                SELECT * FROM nightflow_policy_capacity_summary
+                SELECT *
+                FROM nightflow_policy_capacity_summary
                 WHERE capacity = 20
                 ORDER BY signal_capture DESC, candidate_precision DESC
-            """)
+                """
+            )
 
         if "nightflow_capacity_frontier" in loaded:
-            con.execute("""
+            con.execute(
+                """
                 CREATE VIEW v_nightflow_capacity_marginal_value AS
                 SELECT capacity, previous_capacity, mean_selected_per_day, signal_capture,
                        candidate_recall, mean_backlog_candidates, capacity_utilisation,
@@ -111,17 +134,31 @@ def build_operational_store(results_dir: str | Path, db_path: str | Path) -> dic
                        backlog_reduction_per_extra_review, unused_capacity_per_day
                 FROM nightflow_capacity_frontier
                 ORDER BY capacity
-            """)
+                """
+            )
+
+        if "nightflow_policy_bootstrap_summary" in loaded:
+            con.execute(
+                """
+                CREATE VIEW v_nightflow_policy_robustness AS
+                SELECT policy, capacity, point_signal_capture, ci_lower, ci_upper,
+                       block_length_days, bootstrap_replicates, held_out_dates
+                FROM nightflow_policy_bootstrap_summary
+                ORDER BY point_signal_capture DESC
+                """
+            )
 
         if "nightflow_continuity_sensitivity" in loaded:
-            con.execute("""
+            con.execute(
+                """
                 CREATE VIEW v_nightflow_continuity_frontier AS
                 SELECT carryover_fraction, signal_capture, signal_capture_cost_pp_vs_zero,
                        mean_consecutive_day_jaccard, mean_previous_queue_retention,
                        mean_continuity_selected_per_day, selection_hhi
                 FROM nightflow_continuity_sensitivity
                 ORDER BY carryover_fraction
-            """)
+                """
+            )
 
         con.commit()
 
